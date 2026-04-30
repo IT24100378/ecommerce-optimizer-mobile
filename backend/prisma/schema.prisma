@@ -1,0 +1,161 @@
+// This is your Prisma schema file.
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// 1. User Management (Jayakody's Module)
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String   @unique
+  password  String // Hashed password
+  role      String   @default("CUSTOMER") // Can be CUSTOMER, VENDOR, or ADMIN
+  phone       String?
+  address     String?
+  preferences String?
+  createdAt DateTime @default(now())
+
+  orders  Order[]
+  reviews Review[]
+}
+
+// 2. Product & Catalog Management (Razni's Module - Your Module!)
+model Product {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  sku         String   @unique
+  categoryId  String   @db.ObjectId
+  categoryRef Category @relation(fields: [categoryId], references: [id])
+  basePrice   Float
+  stockQuantity Int
+  imageUrl    String?
+  isActive    Boolean  @default(true) // For "Soft Deletes"
+  createdAt   DateTime @default(now())
+
+  inventory  Inventory?
+  inventoryAdjustments InventoryAdjustment[]
+  orderItems OrderItem[]
+  reviews    Review[]
+  forecasts  DemandForecast[]
+  productPromotions Promotion[] @relation("ProductPromotion")
+
+  @@index([categoryId])
+}
+
+model Category {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String   @unique
+  createdAt DateTime  @default(now())
+
+  products  Product[]
+  categoryPromotions Promotion[] @relation("CategoryPromotion")
+}
+
+enum PromotionType {
+  EVENT
+  CATEGORY
+  PRODUCT
+}
+
+// 3. Inventory Control (Bandara's Module)
+model Inventory {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  productId         String   @unique @db.ObjectId
+  product           Product  @relation(fields: [productId], references: [id])
+  stockLevel        Int      @default(0)
+  lowStockThreshold Int      @default(10) // When to trigger "Restock Alerts"
+  lastUpdated       DateTime @updatedAt
+}
+
+// 4. Order Management (Janith's Module)
+model Order {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id])
+  totalAmount Float
+  discountedTotal Float?
+  status      String   @default("PENDING") // PENDING, SHIPPED, DELIVERED, CANCELLED
+  orderDate   DateTime @default(now())
+
+  items OrderItem[]
+  inventoryAdjustments InventoryAdjustment[]
+}
+
+model InventoryAdjustment {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  productId String   @db.ObjectId
+  product   Product  @relation(fields: [productId], references: [id])
+  orderId   String?  @db.ObjectId
+  order     Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  reason    String
+  change    Int
+  createdAt DateTime @default(now())
+
+  @@unique([orderId, productId, reason])
+  @@index([productId, createdAt])
+  @@index([orderId])
+}
+
+// Belongs to Order Management (Crucial for AI historical data)
+model OrderItem {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  orderId   String  @db.ObjectId
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String  @db.ObjectId
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Float // Price at the exact time of purchase
+}
+
+// 5. Review & Feedback Management (Sathira's Module)
+model Review {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  productId String   @db.ObjectId
+  product   Product  @relation(fields: [productId], references: [id])
+  rating    Int // 1 to 5 stars
+  comment   String?
+  isHidded  Boolean  @default(false) // Admin moderation control
+  isEdited  Boolean  @default(false) // Set to true when customer edits their review
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 6. Promotion Management (Jayaweera's Module)
+model Promotion {
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  campaignName       String
+  type               PromotionType @default(EVENT)
+  promoCode          String?  @unique
+  discountPercentage Float
+  startDate          DateTime
+  endDate            DateTime
+  isActive           Boolean  @default(true)
+  categoryId         String?  @db.ObjectId
+  categoryRef        Category? @relation("CategoryPromotion", fields: [categoryId], references: [id])
+  productId          String?  @db.ObjectId
+  productRef         Product? @relation("ProductPromotion", fields: [productId], references: [id])
+
+  @@index([type])
+  @@index([categoryId])
+  @@index([productId])
+}
+
+// 7. AI Output Storage (Vendor Analytics Dashboard)
+model DemandForecast {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  productId       String   @db.ObjectId
+  product         Product  @relation(fields: [productId], references: [id])
+  predictedDemand Int // The number generated by your Python AI
+  forecastForDate DateTime // The future date this prediction applies to
+  generatedAt     DateTime @default(now())
+}
