@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
 	ActivityIndicator,
+	Alert,
 	Animated,
 	Dimensions,
 	FlatList,
@@ -20,6 +21,7 @@ import {
 	Product,
 	useStorefrontStore,
 } from '../storefront/store';
+import { FEATURE_FLAGS } from '../config/featureFlags';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -51,9 +53,19 @@ const SORT_OPTIONS = [
 	{ id: 'name_asc', label: 'Name A-Z' },
 ];
 
+const FEATURED_CATEGORY_RAILS = [
+	{ title: 'Mobile Phones', aliases: ['mobile phones'] },
+	{ title: 'Laptops', aliases: ['laptops'] },
+	{ title: 'TV', aliases: ['tv', 'tvs'] },
+];
+
 function formatPrice(value: number) {
 	if (!Number.isFinite(value)) return '$0.00';
 	return `$${value.toFixed(2)}`;
+}
+
+function normalizeCategory(value?: string) {
+	return String(value || '').toLowerCase().trim();
 }
 
 function buildSlides(promotions: Promotion[]) {
@@ -240,6 +252,44 @@ function ProductCard({
 	);
 }
 
+function ProductRailCard({
+							 product,
+							 onAdd,
+							 onOpen,
+						 }: {
+	product: Product;
+	onAdd: (product: Product) => void;
+	onOpen: (product: Product) => void;
+}) {
+	const availableStock = Number(product.availableStock ?? product.stockQuantity ?? 0);
+	const outOfStock = availableStock <= 0;
+	const effectivePrice = Number(product.effectivePrice ?? product.basePrice ?? (product as any).price ?? 0);
+
+	return (
+		<Pressable android_ripple={{ color: '#ccc' }} onPress={() => onOpen(product)} style={styles.railCard}>
+			{product.imageUrl ? (
+				<Image source={{ uri: product.imageUrl }} style={styles.railImage} />
+			) : (
+				<View style={styles.railImageFallback}>
+					<Text style={styles.railImageFallbackText}>No Image</Text>
+				</View>
+			)}
+			<View style={styles.railBody}>
+				<Text style={styles.railTitle} numberOfLines={2}>{product.name}</Text>
+				<Text style={styles.railPrice}>{formatPrice(effectivePrice)}</Text>
+				<Pressable
+					android_ripple={{ color: '#ccc' }}
+					onPress={() => onAdd(product)}
+					disabled={outOfStock}
+					style={outOfStock ? styles.railAddButtonDisabled : styles.railAddButton}
+				>
+					<Text style={styles.railAddText}>{outOfStock ? 'Out of Stock' : 'Add'}</Text>
+				</Pressable>
+			</View>
+		</Pressable>
+	);
+}
+
 export default function ProductFeedScreen() {
 	const navigation = useNavigation();
 	const {
@@ -318,20 +368,48 @@ export default function ProductFeedScreen() {
 			});
 	}, [activeCategory, maxPrice, products, searchTerm, sortBy]);
 
+	const exclusiveOfferProducts = useMemo(
+		() => products.filter((product) => Boolean(product.isOnPromotion)),
+		[products]
+	);
+
+	const featuredCategoryRails = useMemo(
+		() => FEATURED_CATEGORY_RAILS
+			.map((row) => ({
+				title: row.title,
+				products: filteredProducts.filter((product) => row.aliases.includes(normalizeCategory(product.category))),
+			}))
+			.filter((row) => row.products.length > 0),
+		[filteredProducts]
+	);
+
 	const totalItems = useMemo(() => cartItems.reduce((sum, item) => sum + item.qty, 0), [cartItems]);
 
 	const handleAddToCart = useCallback((product: Product) => {
 		const availableStock = Number(product.availableStock ?? product.stockQuantity ?? 0);
 		if (availableStock <= 0) return;
+		const id = getProductId(product);
+		const currentQty = cartItems.find((item) => item.id === id)?.qty ?? 0;
+		if (currentQty >= availableStock) {
+			Alert.alert('Stock limit reached', `${product.name || 'This item'} has only ${availableStock} in stock.`);
+			return;
+		}
 		addToCart(product);
-	}, [addToCart]);
+	}, [addToCart, cartItems]);
 
 	const handleOpenDetail = useCallback((product: Product) => {
-		navigation.navigate('ProductDetail' as never, { product } as never);
+		navigation.navigate('ProductDetail' as never, {
+			product,
+			productId: String(product.id ?? product._id ?? ''),
+		} as never);
 	}, [navigation]);
 
 	const renderProduct = useCallback(({ item }: { item: Product }) => (
 		<ProductCard product={item} onAdd={handleAddToCart} onOpen={handleOpenDetail} />
+	), [handleAddToCart, handleOpenDetail]);
+
+	const renderRail = useCallback(({ item }: { item: Product }) => (
+		<ProductRailCard product={item} onAdd={handleAddToCart} onOpen={handleOpenDetail} />
 	), [handleAddToCart, handleOpenDetail]);
 
 	if (loading) {
@@ -372,7 +450,7 @@ export default function ProductFeedScreen() {
 							</View>
 							<Pressable
 								android_ripple={{ color: '#ccc' }}
-											onPress={() => navigation.navigate('Cart' as never)}
+								onPress={() => navigation.navigate('Cart' as never)}
 								style={styles.cartButton}
 							>
 								<Text style={styles.cartButtonText}>Cart</Text>
@@ -417,6 +495,34 @@ export default function ProductFeedScreen() {
 						</View>
 
 						<SortOptions value={sortBy} onChange={(value) => setSortBy(value as typeof sortBy)} />
+
+						{FEATURE_FLAGS.enableMerchandisingRails && activeCategory === 'All' && exclusiveOfferProducts.length > 0 && (
+							<View style={styles.merchSection}>
+								<Text style={styles.merchTitle}>Exclusive Offers</Text>
+								<FlatList
+									data={exclusiveOfferProducts}
+									keyExtractor={(item) => `offer-${getProductId(item)}`}
+									horizontal
+									showsHorizontalScrollIndicator={false}
+									contentContainerStyle={styles.railList}
+									renderItem={renderRail}
+								/>
+							</View>
+						)}
+
+						{FEATURE_FLAGS.enableMerchandisingRails && activeCategory === 'All' && featuredCategoryRails.map((row) => (
+							<View key={row.title} style={styles.merchSection}>
+								<Text style={styles.merchTitle}>{row.title}</Text>
+								<FlatList
+									data={row.products}
+									keyExtractor={(item) => `${row.title}-${getProductId(item)}`}
+									horizontal
+									showsHorizontalScrollIndicator={false}
+									contentContainerStyle={styles.railList}
+									renderItem={renderRail}
+								/>
+							</View>
+						))}
 
 						<Text style={styles.sectionTitle}>Products</Text>
 					</View>
@@ -675,6 +781,80 @@ const styles = StyleSheet.create({
 		fontWeight: '700',
 		marginTop: 12,
 		marginBottom: 8,
+	},
+	merchSection: {
+		marginTop: 14,
+	},
+	merchTitle: {
+		color: '#f8fafc',
+		fontSize: 17,
+		fontWeight: '700',
+		marginBottom: 8,
+	},
+	railList: {
+		paddingRight: 8,
+	},
+	railCard: {
+		width: 176,
+		backgroundColor: '#111827',
+		borderRadius: 14,
+		overflow: 'hidden',
+		marginRight: 10,
+		borderWidth: 1,
+		borderColor: '#1f2937',
+	},
+	railImage: {
+		width: '100%',
+		height: 110,
+	},
+	railImageFallback: {
+		width: '100%',
+		height: 110,
+		backgroundColor: '#0f172a',
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
+	railImageFallbackText: {
+		color: '#64748b',
+		fontSize: 11,
+	},
+	railBody: {
+		padding: 10,
+	},
+	railTitle: {
+		color: '#f8fafc',
+		fontSize: 13,
+		fontWeight: '600',
+		minHeight: 32,
+	},
+	railPrice: {
+		color: '#22d3ee',
+		fontSize: 14,
+		fontWeight: '700',
+		marginTop: 6,
+	},
+	railAddButton: {
+		marginTop: 8,
+		backgroundColor: '#22c55e',
+		borderRadius: 10,
+		paddingVertical: 8,
+		alignItems: 'center',
+		justifyContent: 'center',
+		minHeight: 40,
+	},
+	railAddButtonDisabled: {
+		marginTop: 8,
+		backgroundColor: '#334155',
+		borderRadius: 10,
+		paddingVertical: 8,
+		alignItems: 'center',
+		justifyContent: 'center',
+		minHeight: 40,
+	},
+	railAddText: {
+		color: '#ffffff',
+		fontWeight: '700',
+		fontSize: 12,
 	},
 	productRow: {
 		justifyContent: 'space-between',
