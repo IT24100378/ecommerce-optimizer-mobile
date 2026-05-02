@@ -144,7 +144,7 @@ model Promotion {
   id                 String   @id @default(auto()) @map("_id") @db.ObjectId
   campaignName       String
   type               PromotionType @default(EVENT)
-  promoCode          String?  @unique
+  promoCode          String?
   discountPercentage Float
   startDate          DateTime
   endDate            DateTime

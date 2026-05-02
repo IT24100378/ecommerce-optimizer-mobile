@@ -115,6 +115,17 @@ async function validateAndNormalizePromotionInput(prisma, payload, options = {})
         if (!promoCode) {
             throw createHttpError(400, 'promoCode is required for EVENT promotions.');
         }
+        const duplicatePromoCode = await prisma.promotion.findFirst({
+            where: {
+                promoCode,
+                type: PROMOTION_TYPES.EVENT,
+                ...(existingPromotion?.id ? { id: { not: existingPromotion.id } } : {}),
+            },
+            select: { id: true },
+        });
+        if (duplicatePromoCode) {
+            throw createHttpError(409, 'Promo code must be unique.');
+        }
     }
 
     if (type === PROMOTION_TYPES.CATEGORY) {
