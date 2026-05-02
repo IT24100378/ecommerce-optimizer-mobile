@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticateJwt, requireRole } = require('../middleware/auth');
 const { syncProductStockMirror } = require('../services/inventoryService');
+const { parseProductIdentifier, findProductByIdentifier } = require('../services/productCodeService');
 
 function isValidObjectId(value) {
     return typeof value === 'string' && /^[a-fA-F0-9]{24}$/.test(value);
@@ -55,12 +56,12 @@ router.get('/:id', authenticateJwt, requireRole('ADMIN', 'VENDOR'), async (req, 
 router.post('/', authenticateJwt, requireRole('ADMIN', 'VENDOR'), async (req, res) => {
     const prisma = req.app.locals.prisma;
     const { productId, stockLevel, lowStockThreshold } = req.body;
-    const parsedProductId = String(productId || '');
+    const parsedIdentifier = parseProductIdentifier(productId);
     const parsedStockLevel = stockLevel === undefined ? 0 : parseNonNegativeInt(stockLevel);
     const parsedLowStockThreshold = lowStockThreshold === undefined ? 10 : parseNonNegativeInt(lowStockThreshold);
 
-    if (!isValidObjectId(parsedProductId)) {
-        return res.status(400).json({ error: 'productId is required and must be a valid ObjectId' });
+    if (parsedIdentifier.kind === 'invalid') {
+        return res.status(400).json({ error: 'productId is required and must be a valid ObjectId or numeric product code' });
     }
     if (parsedStockLevel === null) {
         return res.status(400).json({ error: 'stockLevel must be a non-negative integer' });
@@ -71,7 +72,7 @@ router.post('/', authenticateJwt, requireRole('ADMIN', 'VENDOR'), async (req, re
 
     try {
         const record = await prisma.$transaction(async (tx) => {
-            const product = await tx.product.findUnique({ where: { id: parsedProductId } });
+            const product = await findProductByIdentifier(tx, productId, { select: { id: true } });
             if (!product) {
                 const err = new Error('Product not found');
                 err.code = 'PRODUCT_NOT_FOUND';
@@ -80,14 +81,14 @@ router.post('/', authenticateJwt, requireRole('ADMIN', 'VENDOR'), async (req, re
 
             const created = await tx.inventory.create({
                 data: {
-                    productId: parsedProductId,
+                    productId: product.id,
                     stockLevel: parsedStockLevel,
                     lowStockThreshold: parsedLowStockThreshold,
                 },
                 include: { product: true },
             });
 
-            await syncProductStockMirror(tx, parsedProductId, created.stockLevel);
+            await syncProductStockMirror(tx, product.id, created.stockLevel);
             return created;
         });
         res.status(201).json(record);

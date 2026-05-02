@@ -36,17 +36,12 @@ const emptyForm: ProductForm = {
 };
 
 export default function AdminProductDashboardScreen() {
-	const token = useStorefrontStore((state) => state.user?.token);
 	const { products, loading, fetchCatalog, createProduct, updateProduct, deleteProduct } = useStorefrontStore();
 	const [categories, setCategories] = useState<string[]>([]);
 	const [formModal, setFormModal] = useState(false);
-	const [categoryModal, setCategoryModal] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [isEditing, setIsEditing] = useState(false);
 	const [form, setForm] = useState<ProductForm>(emptyForm);
-	const [newCategoryName, setNewCategoryName] = useState('');
-
-	const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
 	const fetchCategories = useCallback(async () => {
 		try {
@@ -119,23 +114,6 @@ export default function AdminProductDashboardScreen() {
 		await fetchCategories();
 	};
 
-	const submitCategory = async () => {
-		if (!headers) return;
-		const name = newCategoryName.trim();
-		if (!name) {
-			Alert.alert('Category', 'Category name is required.');
-			return;
-		}
-		try {
-			await axios.post(`${API_BASE_URL}/api/categories`, { name }, { headers });
-			setCategoryModal(false);
-			setNewCategoryName('');
-			await fetchCategories();
-		} catch (error: any) {
-			Alert.alert('Category', error?.response?.data?.error || 'Failed to create category.');
-		}
-	};
-
 	const confirmDelete = (id: string) => {
 		Alert.alert('Delete Product', 'Delete this product?', [
 			{ text: 'Cancel', style: 'cancel' },
@@ -155,9 +133,6 @@ export default function AdminProductDashboardScreen() {
 			<View style={styles.header}>
 				<Text style={styles.title}>Admin Products</Text>
 				<View style={styles.headerActions}>
-					<Pressable style={styles.secondaryBtn} onPress={() => setCategoryModal(true)}>
-						<Text style={styles.btnText}>+ Category</Text>
-					</Pressable>
 					<Pressable style={styles.primaryBtn} onPress={openCreate}>
 						<Text style={styles.btnText}>+ Product</Text>
 					</Pressable>
@@ -232,29 +207,6 @@ export default function AdminProductDashboardScreen() {
 					</View>
 				</View>
 			</Modal>
-
-			<Modal visible={categoryModal} transparent animationType="fade">
-				<View style={[styles.modalOverlay, styles.centeredOverlay]}>
-					<View style={styles.categoryModal}>
-						<Text style={styles.modalTitle}>Create Category</Text>
-						<TextInput
-							value={newCategoryName}
-							onChangeText={setNewCategoryName}
-							placeholder="Category Name"
-							placeholderTextColor="#64748b"
-							style={styles.input}
-						/>
-						<View style={styles.modalActions}>
-							<Pressable style={styles.secondaryBtn} onPress={() => setCategoryModal(false)}>
-								<Text style={styles.btnText}>Cancel</Text>
-							</Pressable>
-							<Pressable style={styles.primaryBtn} onPress={submitCategory}>
-								<Text style={styles.btnText}>Create</Text>
-							</Pressable>
-						</View>
-					</View>
-				</View>
-			</Modal>
 		</SafeAreaView>
 	);
 }
@@ -279,8 +231,6 @@ const styles = StyleSheet.create({
 	btnText: { color: '#fff', fontSize: 12, fontWeight: '600' },
 	modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
 	modalBody: { backgroundColor: '#0f172a', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16, height: '86%' },
-	centeredOverlay: { justifyContent: 'center', alignItems: 'center' },
-	categoryModal: { backgroundColor: '#0f172a', borderRadius: 16, padding: 16, margin: 18, width: '90%' },
 	modalTitle: { color: '#f8fafc', fontSize: 18, fontWeight: '700', marginBottom: 10 },
 	modalScroll: { flex: 1 },
 	input: { backgroundColor: '#1e293b', color: '#f8fafc', borderRadius: 8, paddingHorizontal: 10, minHeight: 42, marginBottom: 10 },

@@ -1,33 +1,35 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import ProductDashboard from './components/ProductDashboard';
+import CategoryDashboard from './components/CategoryDashboard';
 import OrderDashboard from './components/OrderDashboard';
 import ReviewDashboard from './components/ReviewDashboard';
 import InventoryDashboard from './components/InventoryDashboard';
 import PromotionDashboard from './components/PromotionDashboard';
 import UserDashboard from './components/UserDashboard';
 import ForecastDashboard from './components/ForecastDashboard';
-import axios from 'axios';
 
 const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
 const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-  { id: 'products', label: 'Products', icon: '📦' },
-  { id: 'orders', label: 'Orders', icon: '🛒' },
-  { id: 'reviews', label: 'Reviews', icon: '⭐' },
-  { id: 'inventory', label: 'Inventory', icon: '🏭' },
-  { id: 'promotions', label: 'Promotions', icon: '🎁' },
-  { id: 'users', label: 'Users', icon: '👥' },
-  { id: 'forecasts', label: 'AI Forecasts', icon: '🤖' },
+  { id: 'dashboard', label: 'Dashboard', icon: 'DB' },
+  { id: 'products', label: 'Products', icon: 'PR' },
+  { id: 'categories', label: 'Categories', icon: 'CT' },
+  { id: 'orders', label: 'Orders', icon: 'OR' },
+  { id: 'reviews', label: 'Reviews', icon: 'RV' },
+  { id: 'inventory', label: 'Inventory', icon: 'IN' },
+  { id: 'promotions', label: 'Promotions', icon: 'PM' },
+  { id: 'users', label: 'Users', icon: 'US' },
+  { id: 'forecasts', label: 'AI Forecasts', icon: 'AI' },
 ];
 
 function StatCard({ label, value, icon, color }) {
   return (
     <div className={`bg-white rounded-2xl shadow p-6 flex items-center gap-4 border-l-4 ${color} transition-all duration-200 hover:shadow-lg hover:-translate-y-1`}>
-      <div className="text-4xl">{icon}</div>
+      <div className="text-xl font-bold text-gray-700 w-10">{icon}</div>
       <div>
         <p className="text-gray-500 text-sm font-medium">{label}</p>
-        <p className="text-3xl font-bold text-gray-800">{value ?? '–'}</p>
+        <p className="text-3xl font-bold text-gray-800">{value ?? '-'}</p>
       </div>
     </div>
   );
@@ -40,8 +42,9 @@ function DashboardOverview() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [products, orders, reviews, inventory, promotions, users] = await Promise.all([
+        const [products, categories, orders, reviews, inventory, promotions, users] = await Promise.all([
           axios.get(`${API}/api/products`),
+          axios.get(`${API}/api/categories`),
           axios.get(`${API}/api/orders`),
           axios.get(`${API}/api/reviews?adminView=true`),
           axios.get(`${API}/api/inventory`),
@@ -50,6 +53,7 @@ function DashboardOverview() {
         ]);
         setStats({
           products: products.data.length,
+          categories: categories.data.length,
           orders: orders.data.length,
           reviews: reviews.data.length,
           inventory: inventory.data.length,
@@ -66,12 +70,13 @@ function DashboardOverview() {
   }, []);
 
   const cards = [
-    { label: 'Products', value: stats.products, icon: '📦', color: 'border-indigo-500' },
-    { label: 'Orders', value: stats.orders, icon: '🛒', color: 'border-blue-500' },
-    { label: 'Reviews', value: stats.reviews, icon: '⭐', color: 'border-yellow-500' },
-    { label: 'Inventory Items', value: stats.inventory, icon: '🏭', color: 'border-green-500' },
-    { label: 'Promotions', value: stats.promotions, icon: '🎁', color: 'border-pink-500' },
-    { label: 'Users', value: stats.users, icon: '👥', color: 'border-purple-500' },
+    { label: 'Products', value: stats.products, icon: 'PR', color: 'border-indigo-500' },
+    { label: 'Categories', value: stats.categories, icon: 'CT', color: 'border-teal-500' },
+    { label: 'Orders', value: stats.orders, icon: 'OR', color: 'border-blue-500' },
+    { label: 'Reviews', value: stats.reviews, icon: 'RV', color: 'border-yellow-500' },
+    { label: 'Inventory Items', value: stats.inventory, icon: 'IN', color: 'border-green-500' },
+    { label: 'Promotions', value: stats.promotions, icon: 'PM', color: 'border-pink-500' },
+    { label: 'Users', value: stats.users, icon: 'US', color: 'border-purple-500' },
   ];
 
   return (
@@ -80,17 +85,13 @@ function DashboardOverview() {
       <p className="text-gray-500 mb-8">Welcome to the E-Commerce Inventory Optimizer</p>
       {loading ? (
         <div className="flex items-center justify-center h-48">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" />
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {cards.map(c => <StatCard key={c.label} {...c} />)}
+          {cards.map((card) => <StatCard key={card.label} {...card} />)}
         </div>
       )}
-      <div className="mt-10 bg-white rounded-2xl shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-700 mb-3">Quick Info</h2>
-        <p className="text-gray-500 text-sm">Use the sidebar to navigate between modules. Each module allows full CRUD operations on the respective data. The AI Forecasts module lets you generate future sales predictions for selected products.</p>
-      </div>
     </div>
   );
 }
@@ -113,29 +114,13 @@ function AdminLogin({ onLogin, error, loading }) {
         {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          />
+          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          />
+          <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
         </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 transition-all duration-200 disabled:opacity-60"
-        >
+        <button type="submit" disabled={loading} className="w-full bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 transition-all duration-200 disabled:opacity-60">
           {loading ? 'Signing in...' : 'Sign In'}
         </button>
       </form>
@@ -200,6 +185,7 @@ export default function App() {
     switch (active) {
       case 'dashboard': return <DashboardOverview />;
       case 'products': return <ProductDashboard />;
+      case 'categories': return <CategoryDashboard />;
       case 'orders': return <OrderDashboard />;
       case 'reviews': return <ReviewDashboard />;
       case 'inventory': return <InventoryDashboard />;
@@ -212,71 +198,40 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
-      {/* Sidebar */}
-      <aside
-        className={`${sidebarOpen ? 'w-64' : 'w-16'} transition-all duration-300 bg-gradient-to-b from-indigo-900 via-indigo-800 to-purple-900 flex flex-col shadow-2xl z-20`}
-      >
+      <aside className={`${sidebarOpen ? 'w-64' : 'w-16'} transition-all duration-300 bg-gradient-to-b from-indigo-900 via-indigo-800 to-purple-900 flex flex-col shadow-2xl z-20`}>
         <div className="flex items-center justify-between px-4 py-5 border-b border-indigo-700">
-          {sidebarOpen && (
-            <span className="text-white font-bold text-base leading-tight">
-              📈 Inventory<br />Optimizer
-            </span>
-          )}
-          <button
-            onClick={() => setSidebarOpen(o => !o)}
-            className="text-indigo-200 hover:text-white transition-colors duration-200 ml-auto"
-          >
-            {sidebarOpen ? '◀' : '▶'}
+          {sidebarOpen && <span className="text-white font-bold text-base leading-tight">Inventory Optimizer</span>}
+          <button onClick={() => setSidebarOpen((open) => !open)} className="text-indigo-200 hover:text-white transition-colors duration-200 ml-auto">
+            {sidebarOpen ? '<' : '>'}
           </button>
         </div>
         <nav className="flex-1 py-4 overflow-y-auto">
-          {navItems.map(item => (
+          {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => setActive(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all duration-200 rounded-lg mx-1 my-0.5
-                ${active === item.id
-                  ? 'bg-white bg-opacity-20 text-white font-semibold shadow-inner'
-                  : 'text-indigo-200 hover:bg-white hover:bg-opacity-10 hover:text-white'}`}
-              style={{ width: sidebarOpen ? 'calc(100% - 8px)' : 'calc(100% - 8px)' }}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all duration-200 rounded-lg mx-1 my-0.5 ${active === item.id ? 'bg-white bg-opacity-20 text-white font-semibold shadow-inner' : 'text-indigo-200 hover:bg-white hover:bg-opacity-10 hover:text-white'}`}
+              style={{ width: 'calc(100% - 8px)' }}
             >
-              <span className="text-xl flex-shrink-0">{item.icon}</span>
+              <span className="text-xs font-bold w-8">{item.icon}</span>
               {sidebarOpen && <span className="text-sm truncate">{item.label}</span>}
             </button>
           ))}
         </nav>
-        {sidebarOpen && (
-          <div className="px-4 py-3 border-t border-indigo-700 space-y-2">
-            <a
-              href="/"
-              className="flex items-center gap-2 text-indigo-300 hover:text-white text-xs transition-colors duration-200"
-            >
-              🛍️ View Customer Store
-            </a>
-            <p className="text-indigo-400 text-xs">E-Commerce Optimizer v1.0</p>
-          </div>
-        )}
       </aside>
-
-      {/* Main content */}
       <main className="flex-1 overflow-y-auto">
         <header className="bg-white shadow-sm px-8 py-4 flex items-center justify-between sticky top-0 z-10">
           <h2 className="text-lg font-semibold text-gray-700 capitalize">
-            {navItems.find(n => n.id === active)?.icon} {navItems.find(n => n.id === active)?.label}
+            {navItems.find((item) => item.id === active)?.label}
           </h2>
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-500">{adminUser.email}</span>
-            <button
-              onClick={handleAdminLogout}
-              className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1.5 rounded-lg font-medium"
-            >
+            <button onClick={handleAdminLogout} className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1.5 rounded-lg font-medium">
               Logout
             </button>
           </div>
         </header>
-        <div className="p-8">
-          {renderContent()}
-        </div>
+        <div className="p-8">{renderContent()}</div>
       </main>
     </div>
   );

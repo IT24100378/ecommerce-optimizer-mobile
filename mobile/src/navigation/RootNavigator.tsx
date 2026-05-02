@@ -11,6 +11,7 @@ import OrdersScreen from '../screens/OrdersScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import AdminDashboardScreen from '../screens/AdminDashboardScreen';
 import AdminProductDashboardScreen from '../screens/AdminProductDashboardScreen';
+import AdminCategoriesScreen from '../screens/AdminCategoriesScreen';
 import AdminOrdersScreen from '../screens/AdminOrdersScreen';
 import AdminInventoryScreen from '../screens/AdminInventoryScreen';
 import AdminPromotionsScreen from '../screens/AdminPromotionsScreen';
@@ -58,6 +59,7 @@ function AdminStackScreen() {
 		<AdminStack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
 			<AdminStack.Screen name="AdminHome" component={AdminDashboardScreen} />
 			<AdminStack.Screen name="AdminProducts" component={AdminProductDashboardScreen} />
+			<AdminStack.Screen name="AdminCategories" component={AdminCategoriesScreen} />
 			<AdminStack.Screen name="AdminOrders" component={AdminOrdersScreen} />
 			<AdminStack.Screen name="AdminInventory" component={AdminInventoryScreen} />
 			<AdminStack.Screen name="AdminPromotions" component={AdminPromotionsScreen} />

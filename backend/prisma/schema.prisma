@@ -29,6 +29,7 @@ model User {
 // 2. Product & Catalog Management (Razni's Module - Your Module!)
 model Product {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  productCode Int?
   name        String
   description String?
   sku         String   @unique
@@ -48,6 +49,14 @@ model Product {
   productPromotions Promotion[] @relation("ProductPromotion")
 
   @@index([categoryId])
+  @@index([productCode])
+}
+
+model Counter {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  key       String   @unique
+  seq       Int      @default(0)
+  updatedAt DateTime @updatedAt
 }
 
 model Category {

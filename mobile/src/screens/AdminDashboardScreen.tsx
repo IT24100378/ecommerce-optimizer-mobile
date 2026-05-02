@@ -12,6 +12,7 @@ export default function AdminDashboardScreen() {
 	const [loading, setLoading] = useState(true);
 	const modules = [
 		{ key: 'products', label: 'Products', route: 'AdminProducts' },
+		{ key: 'categories', label: 'Categories', route: 'AdminCategories' },
 		{ key: 'orders', label: 'Orders', route: 'AdminOrders' },
 		{ key: 'inventory', label: 'Inventory', route: 'AdminInventory' },
 		{ key: 'promotions', label: 'Promotions', route: 'AdminPromotions' },
@@ -25,8 +26,9 @@ export default function AdminDashboardScreen() {
 		setLoading(true);
 		try {
 			const headers = { Authorization: `Bearer ${token}` };
-			const [products, orders, inventory, promotions, users, forecasts, reviews] = await Promise.all([
+			const [products, categories, orders, inventory, promotions, users, forecasts, reviews] = await Promise.all([
 				axios.get(`${API_BASE_URL}/api/products`),
+				axios.get(`${API_BASE_URL}/api/categories`),
 				axios.get(`${API_BASE_URL}/api/orders`, { headers }),
 				axios.get(`${API_BASE_URL}/api/inventory`, { headers }),
 				axios.get(`${API_BASE_URL}/api/promotions`, { headers }),
@@ -36,6 +38,7 @@ export default function AdminDashboardScreen() {
 			]);
 			setStats({
 				products: Array.isArray(products.data) ? products.data.length : 0,
+				categories: Array.isArray(categories.data) ? categories.data.length : 0,
 				orders: Array.isArray(orders.data) ? orders.data.length : 0,
 				inventory: Array.isArray(inventory.data) ? inventory.data.length : 0,
 				promotions: Array.isArray(promotions.data) ? promotions.data.length : 0,

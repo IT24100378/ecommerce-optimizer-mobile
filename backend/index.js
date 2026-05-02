@@ -9,6 +9,7 @@ const path = require('path');
 const net = require('net');
 const { spawn } = require('child_process');
 const { PrismaClient } = require('@prisma/client');
+const { backfillMissingProductCodes } = require('./services/productCodeService');
 
 const prisma = new PrismaClient();
 let aiServiceProcess = null;
@@ -315,3 +316,11 @@ Promise.allSettled([ensureDefaultAdmin(), ensureAiServiceReady()]).then((results
         }
     });
 });
+
+backfillMissingProductCodes(prisma)
+    .then(() => {
+        console.log('[startup] Product code backfill completed.');
+    })
+    .catch((err) => {
+        console.warn('[startup] Product code backfill skipped:', err.message);
+    });

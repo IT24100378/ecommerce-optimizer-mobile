@@ -4,10 +4,11 @@ const { authenticateJwt, requireRole } = require('../middleware/auth');
 const { ensureInventoryRecord, mapProductWithInventory } = require('../services/inventoryService');
 const { normalizeCategoryName } = require('../services/categoryService');
 const { applyNativePromotionPricing } = require('../services/promotionService');
-
-function isValidObjectId(value) {
-    return typeof value === 'string' && /^[a-fA-F0-9]{24}$/.test(value);
-}
+const {
+    parseProductIdentifier,
+    getNextProductCode,
+    findProductByIdentifier,
+} = require('../services/productCodeService');
 
 function serverError(res, err, fallbackMessage) {
     console.error('[products] Route error:', err);
@@ -67,8 +68,10 @@ router.post('/', authenticateJwt, requireRole('ADMIN', 'VENDOR'), async (req, re
         }
 
         const newProduct = await prisma.$transaction(async (tx) => {
+            const productCode = await getNextProductCode(tx);
             const createdProduct = await tx.product.create({
                 data: {
+                    productCode,
                     name,
                     description,
                     sku,
@@ -96,14 +99,14 @@ router.post('/', authenticateJwt, requireRole('ADMIN', 'VENDOR'), async (req, re
 // GET /api/products/:id – Read a single active product
 router.get('/:id', async (req, res) => {
     try {
-        const id = req.params.id;
-        if (!isValidObjectId(id)) {
-            return res.status(400).json({ error: 'Invalid product ID.' });
+        const parsedIdentifier = parseProductIdentifier(req.params.id);
+        if (parsedIdentifier.kind === 'invalid') {
+            return res.status(400).json({ error: 'Invalid product ID. Use Mongo ObjectId or numeric product code.' });
         }
         const prisma = req.app.locals.prisma;
 
-        const product = await prisma.product.findFirst({
-            where: { id, isActive: true },
+        const product = await findProductByIdentifier(prisma, req.params.id, {
+            where: { isActive: true },
             include: { inventory: true, categoryRef: true },
         });
 
@@ -136,12 +139,16 @@ router.get('/', async (req, res) => {
 // PUT /api/products/:id – Update an existing product
 router.put('/:id', authenticateJwt, requireRole('ADMIN', 'VENDOR'), async (req, res) => {
     try {
-        const id = req.params.id;
-        if (!isValidObjectId(id)) {
-            return res.status(400).json({ error: 'Invalid product ID.' });
+        const parsedIdentifier = parseProductIdentifier(req.params.id);
+        if (parsedIdentifier.kind === 'invalid') {
+            return res.status(400).json({ error: 'Invalid product ID. Use Mongo ObjectId or numeric product code.' });
         }
         const { name, description, sku, category, basePrice, imageUrl } = req.body;
         const prisma = req.app.locals.prisma;
+        const existingProduct = await findProductByIdentifier(prisma, req.params.id, { select: { id: true } });
+        if (!existingProduct) {
+            return res.status(404).json({ error: 'Product not found.' });
+        }
         const data = { name, description, sku, basePrice, imageUrl };
         if (category !== undefined) {
             const categoryCheck = await resolveCategorySelection(prisma, category);
@@ -160,7 +167,7 @@ router.put('/:id', authenticateJwt, requireRole('ADMIN', 'VENDOR'), async (req, 
 
         const updatedProduct = await prisma.$transaction(async (tx) => {
             const updated = await tx.product.update({
-                where: { id },
+                where: { id: existingProduct.id },
                 data,
                 include: { inventory: true, categoryRef: true },
             });
@@ -180,14 +187,18 @@ router.put('/:id', authenticateJwt, requireRole('ADMIN', 'VENDOR'), async (req, 
 // DELETE /api/products/:id – Soft delete (set isActive = false)
 router.delete('/:id', authenticateJwt, requireRole('ADMIN', 'VENDOR'), async (req, res) => {
     try {
-        const id = req.params.id;
-        if (!isValidObjectId(id)) {
-            return res.status(400).json({ error: 'Invalid product ID.' });
+        const parsedIdentifier = parseProductIdentifier(req.params.id);
+        if (parsedIdentifier.kind === 'invalid') {
+            return res.status(400).json({ error: 'Invalid product ID. Use Mongo ObjectId or numeric product code.' });
         }
         const prisma = req.app.locals.prisma;
+        const existingProduct = await findProductByIdentifier(prisma, req.params.id, { select: { id: true } });
+        if (!existingProduct) {
+            return res.status(404).json({ error: 'Product not found.' });
+        }
 
         await prisma.product.update({
-            where: { id },
+            where: { id: existingProduct.id },
             data: { isActive: false },
         });
 
