@@ -150,7 +150,12 @@ export default function InventoryDashboard() {
                 return (
                   <tr key={record.id} className={`border-t border-gray-100 hover:bg-gray-50 transition-colors duration-150 ${isLow ? 'bg-red-50' : ''}`}>
                     <td className="px-4 py-3 font-medium text-indigo-600">#{record.id}</td>
-                    <td className="px-4 py-3 font-medium">{record.product?.name || `Product #${record.productId}`}</td>
+                    <td className="px-4 py-3 font-medium">
+                      {record.product?.name || `Product #${record.productId}`}
+                      {record.product?.productCode ? (
+                        <div className="text-xs text-gray-500 mt-1">Code: {record.product.productCode}</div>
+                      ) : null}
+                    </td>
                     <td className="px-4 py-3 w-40">
                       <StockBar stockLevel={record.stockLevel} threshold={record.lowStockThreshold} />
                     </td>
@@ -179,10 +184,11 @@ export default function InventoryDashboard() {
       {showCreate && (
         <Modal title="Add Inventory Record" onClose={() => setShowCreate(false)}>
           <form onSubmit={handleCreate} className="space-y-4">
-            {[['productId', 'Product ID', 'number'], ['stockLevel', 'Stock Level', 'number'], ['lowStockThreshold', 'Low Stock Threshold', 'number']].map(([f, l, t]) => (
+            {[['productId', 'Product ID / Code', 'text'], ['stockLevel', 'Stock Level', 'number'], ['lowStockThreshold', 'Low Stock Threshold', 'number']].map(([f, l, t]) => (
               <div key={f}>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{l}</label>
                 <input type={t} required={f === 'productId'} value={form[f]}
+                  placeholder={f === 'productId' ? 'Mongo ObjectId or numeric product code' : ''}
                   onChange={e => setForm(p => ({ ...p, [f]: e.target.value }))}
                   className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
               </div>

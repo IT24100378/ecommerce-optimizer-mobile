@@ -144,7 +144,7 @@ export default function ProductDashboard() {
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        {['Image', 'Name', 'SKU', 'Category', 'Price', 'Stock', 'Actions'].map((h) => (
+                                        {['Image', 'Name', 'Code', 'SKU', 'Category', 'Price', 'Stock', 'Actions'].map((h) => (
                                             <th
                                                 key={h}
                                                 className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
@@ -181,6 +181,9 @@ export default function ProductDashboard() {
                                                         {product.description}
                                                     </div>
                                                 )}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-gray-600 font-mono">
+                                                {product.productCode ?? '-'}
                                             </td>
                                             <td className="px-6 py-4 text-sm text-gray-600 font-mono">
                                                 {product.sku}

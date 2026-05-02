@@ -155,6 +155,7 @@ export default function AdminProductDashboardScreen() {
 								<Image source={{ uri: item.imageUrl || 'https://via.placeholder.com/150' }} style={styles.image} />
 								<View style={styles.info}>
 									<Text style={styles.name}>{item.name}</Text>
+									<Text style={styles.meta}>Code: {item.productCode ?? '-'}</Text>
 									<Text style={styles.meta}>SKU: {item.sku || 'N/A'}</Text>
 									<Text style={styles.meta}>{item.category || 'General'} • Stock {stock}</Text>
 									<Text style={styles.price}>${price}</Text>

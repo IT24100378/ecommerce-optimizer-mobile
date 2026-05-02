@@ -203,7 +203,9 @@ function PromoForm({ data, setData, onSubmit, onCancel, onPreview, label, saving
           >
             <option value="">Select product</option>
             {products.map((product) => (
-              <option key={product.id} value={product.id}>{product.name} ({product.sku})</option>
+              <option key={product.id} value={product.id}>
+                {product.name} ({product.sku}) {product.productCode ? `- Code ${product.productCode}` : ''}
+              </option>
             ))}
           </select>
         </div>
@@ -322,7 +324,7 @@ export default function PromotionDashboard() {
         startDate: form.startDate,
         endDate: form.endDate,
         categoryName: form.type === 'CATEGORY' ? form.categoryId : null,
-        productId: form.type === 'PRODUCT' ? Number(form.productId) : null,
+        productId: form.type === 'PRODUCT' ? String(form.productId).trim() : null,
         isActive: form.isActive,
       });
       if (!previewRes.data?.ok) {
@@ -339,7 +341,7 @@ export default function PromotionDashboard() {
         endDate: form.endDate,
         categoryName: form.type === 'CATEGORY' ? form.categoryId : null,
         categoryId: null,
-        productId: form.type === 'PRODUCT' ? Number(form.productId) : null,
+        productId: form.type === 'PRODUCT' ? String(form.productId).trim() : null,
         isActive: form.isActive,
       });
       setShowCreate(false);
@@ -365,7 +367,7 @@ export default function PromotionDashboard() {
         startDate: editForm.startDate,
         endDate: editForm.endDate,
         categoryName: editForm.type === 'CATEGORY' ? editForm.categoryId : null,
-        productId: editForm.type === 'PRODUCT' ? Number(editForm.productId) : null,
+        productId: editForm.type === 'PRODUCT' ? String(editForm.productId).trim() : null,
         isActive: editForm.isActive,
       });
       if (!previewRes.data?.ok) {
@@ -425,7 +427,7 @@ export default function PromotionDashboard() {
     startDate: promoForm.startDate,
     endDate: promoForm.endDate,
     categoryName: promoForm.type === 'CATEGORY' ? promoForm.categoryId : null,
-    productId: promoForm.type === 'PRODUCT' ? Number(promoForm.productId) : null,
+    productId: promoForm.type === 'PRODUCT' ? String(promoForm.productId).trim() : null,
     isActive: promoForm.isActive,
   });
 

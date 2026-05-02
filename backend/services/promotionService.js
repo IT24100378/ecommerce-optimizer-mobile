@@ -3,6 +3,7 @@ const PROMOTION_TYPES = {
     CATEGORY: 'CATEGORY',
     PRODUCT: 'PRODUCT',
 };
+const { parseProductIdentifier } = require('./productCodeService');
 
 const PROMOTION_PRIORITY = {
     [PROMOTION_TYPES.PRODUCT]: 3,
@@ -145,17 +146,34 @@ async function validateAndNormalizePromotionInput(prisma, payload, options = {})
     }
 
     if (type === PROMOTION_TYPES.PRODUCT) {
-        productId = payload.productId !== undefined
-            ? normalizeObjectId(payload.productId, 'productId')
-            : existingPromotion?.productId;
-        if (!productId) {
+        const rawProductIdentifier = payload.productId !== undefined
+            ? String(payload.productId).trim()
+            : String(existingPromotion?.productId || '').trim();
+        if (!rawProductIdentifier) {
             throw createHttpError(400, 'productId is required for PRODUCT promotions.');
         }
-        const productExists = await prisma.product.findUnique({
-            where: { id: productId },
-            select: { id: true, categoryId: true, isActive: true },
-        });
-        if (!productExists || !productExists.isActive) {
+
+        const parsedIdentifier = parseProductIdentifier(rawProductIdentifier);
+        if (parsedIdentifier.kind === 'invalid') {
+            throw createHttpError(400, 'productId must be a valid ObjectId or numeric product code.');
+        }
+
+        let productExists = null;
+        if (parsedIdentifier.kind === 'objectId') {
+            productId = normalizeObjectId(rawProductIdentifier, 'productId');
+            productExists = await prisma.product.findUnique({
+                where: { id: productId },
+                select: { id: true, categoryId: true, isActive: true },
+            });
+        } else {
+            productExists = await prisma.product.findFirst({
+                where: { productCode: parsedIdentifier.value },
+                select: { id: true, categoryId: true, isActive: true },
+            });
+            productId = productExists?.id || null;
+        }
+
+        if (!productExists || !productExists.isActive || !productId) {
             throw createHttpError(400, 'Selected product does not exist or is inactive.');
         }
     }

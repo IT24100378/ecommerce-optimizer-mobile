@@ -13,6 +13,7 @@ export type Promotion = {
 export type Product = {
 	id?: string | number;
 	_id?: string;
+	productCode?: number;
 	sku?: string;
 	name?: string;
 	description?: string;

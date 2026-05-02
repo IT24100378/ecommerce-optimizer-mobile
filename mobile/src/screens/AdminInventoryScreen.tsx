@@ -132,7 +132,7 @@ export default function AdminInventoryScreen() {
 			{showCreate && (
 				<View style={styles.formCard}>
 					<Text style={styles.cardTitle}>Create Inventory Record</Text>
-					<TextInput value={draft.productId} onChangeText={(value) => setDraft((prev) => ({ ...prev, productId: value }))} placeholder="Product ID" placeholderTextColor="#64748b" style={styles.input} />
+					<TextInput value={draft.productId} onChangeText={(value) => setDraft((prev) => ({ ...prev, productId: value }))} placeholder="Product ObjectId or Product Code" placeholderTextColor="#64748b" style={styles.input} />
 					<View style={styles.row}>
 						<TextInput value={draft.stockLevel} onChangeText={(value) => setDraft((prev) => ({ ...prev, stockLevel: value }))} placeholder="Stock Level" placeholderTextColor="#64748b" keyboardType="numeric" style={[styles.input, styles.flex]} />
 						<TextInput value={draft.lowStockThreshold} onChangeText={(value) => setDraft((prev) => ({ ...prev, lowStockThreshold: value }))} placeholder="Threshold" placeholderTextColor="#64748b" keyboardType="numeric" style={[styles.input, styles.flex]} />
@@ -156,6 +156,7 @@ export default function AdminInventoryScreen() {
 						return (
 							<View style={[styles.card, lowStock ? styles.lowStockCard : null]}>
 								<Text style={styles.cardTitle}>{item.product?.name || `Product ${item.productId}`}</Text>
+								{item.product?.productCode ? <Text style={styles.meta}>Code: {item.product.productCode}</Text> : null}
 								<Text style={styles.meta}>ID: {item.id}</Text>
 								{editing ? (
 									<View style={styles.row}>

@@ -15,6 +15,10 @@ function serverError(res, err, fallbackMessage) {
     return res.status(500).json({ error: fallbackMessage || 'Internal server error' });
 }
 
+function normalizeSku(value) {
+    return String(value ?? '').trim();
+}
+
 async function resolveCategorySelection(prisma, category) {
     const normalizedCategory = normalizeCategoryName(category);
     if (!normalizedCategory) {
@@ -58,6 +62,11 @@ router.post('/', authenticateJwt, requireRole('ADMIN', 'VENDOR'), async (req, re
     try {
         const { name, description, sku, category, basePrice, imageUrl } = req.body;
         const prisma = req.app.locals.prisma;
+        const normalizedSku = normalizeSku(sku);
+        if (!normalizedSku) {
+            return res.status(400).json({ error: 'SKU is required.' });
+        }
+
         const categoryCheck = await resolveCategorySelection(prisma, category);
         if (!categoryCheck.ok) {
             return res.status(400).json({ error: categoryCheck.error });
@@ -65,6 +74,13 @@ router.post('/', authenticateJwt, requireRole('ADMIN', 'VENDOR'), async (req, re
         const parsedBasePrice = Number.parseFloat(basePrice);
         if (Number.isNaN(parsedBasePrice) || parsedBasePrice < 0) {
             return res.status(400).json({ error: 'basePrice is required and must be a non-negative number.' });
+        }
+        const existingSku = await prisma.product.findFirst({
+            where: { sku: normalizedSku },
+            select: { id: true },
+        });
+        if (existingSku) {
+            return res.status(409).json({ error: `SKU '${normalizedSku}' already exists.` });
         }
 
         const newProduct = await prisma.$transaction(async (tx) => {
@@ -74,7 +90,7 @@ router.post('/', authenticateJwt, requireRole('ADMIN', 'VENDOR'), async (req, re
                     productCode,
                     name,
                     description,
-                    sku,
+                    sku: normalizedSku,
                     categoryId: categoryCheck.categoryId,
                     basePrice: parsedBasePrice,
                     imageUrl,
@@ -92,6 +108,9 @@ router.post('/', authenticateJwt, requireRole('ADMIN', 'VENDOR'), async (req, re
         const [pricedProduct] = await applyNativePromotionPricing(prisma, [newProduct]);
         res.status(201).json({ message: 'Product created successfully!', product: serializeProduct(pricedProduct) });
     } catch (error) {
+        if (error?.code === 'P2002') {
+            return res.status(409).json({ error: 'SKU already exists.' });
+        }
         return serverError(res, error, 'Failed to create product. SKU might already exist.');
     }
 });
@@ -144,12 +163,28 @@ router.put('/:id', authenticateJwt, requireRole('ADMIN', 'VENDOR'), async (req, 
             return res.status(400).json({ error: 'Invalid product ID. Use Mongo ObjectId or numeric product code.' });
         }
         const { name, description, sku, category, basePrice, imageUrl } = req.body;
+        const normalizedSku = sku === undefined ? undefined : normalizeSku(sku);
+        if (sku !== undefined && !normalizedSku) {
+            return res.status(400).json({ error: 'SKU cannot be empty.' });
+        }
         const prisma = req.app.locals.prisma;
         const existingProduct = await findProductByIdentifier(prisma, req.params.id, { select: { id: true } });
         if (!existingProduct) {
             return res.status(404).json({ error: 'Product not found.' });
         }
-        const data = { name, description, sku, basePrice, imageUrl };
+        if (normalizedSku !== undefined) {
+            const existingSku = await prisma.product.findFirst({
+                where: {
+                    sku: normalizedSku,
+                    id: { not: existingProduct.id },
+                },
+                select: { id: true },
+            });
+            if (existingSku) {
+                return res.status(409).json({ error: `SKU '${normalizedSku}' already exists.` });
+            }
+        }
+        const data = { name, description, sku: normalizedSku, basePrice, imageUrl };
         if (category !== undefined) {
             const categoryCheck = await resolveCategorySelection(prisma, category);
             if (!categoryCheck.ok) {
@@ -180,6 +215,9 @@ router.put('/:id', authenticateJwt, requireRole('ADMIN', 'VENDOR'), async (req, 
         const [pricedProduct] = await applyNativePromotionPricing(prisma, [updatedProduct]);
         res.status(200).json({ message: 'Product updated successfully!', product: serializeProduct(pricedProduct) });
     } catch (error) {
+        if (error?.code === 'P2002') {
+            return res.status(409).json({ error: 'SKU already exists.' });
+        }
         return serverError(res, error, 'Failed to update product.');
     }
 });
