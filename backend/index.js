@@ -62,8 +62,8 @@ app.use('/api/users', (req, res, next) => {
 });
 
 async function ensureDefaultAdmin() {
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@ecommerce.local';
-    const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD || 'Admin@12345';
+    const adminEmail = String(process.env.ADMIN_EMAIL || 'admin@ecommerce.local').trim().toLowerCase();
+    const defaultPassword = String(process.env.ADMIN_DEFAULT_PASSWORD || 'Admin@12345').trim();
     const forceReset = (process.env.FORCE_ADMIN_RESET_ON_STARTUP || 'true').toLowerCase() === 'true';
 
     if (!process.env.DATABASE_URL || !process.env.DATABASE_URL.trim()) {

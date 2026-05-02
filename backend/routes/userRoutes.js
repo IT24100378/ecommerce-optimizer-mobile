@@ -123,7 +123,8 @@ router.get('/:id', authenticateJwt, async (req, res) => {
 // POST / - create user
 router.post('/', async (req, res) => {
     const prisma = req.app.locals.prisma;
-    const { name, email, password, phone, address, preferences } = req.body;
+    const { name, password, phone, address, preferences } = req.body;
+    const email = String(req.body?.email || '').trim().toLowerCase();
     if (!name || !email || !password) {
         return res.status(400).json({ error: 'name, email, and password are required' });
     }
@@ -149,9 +150,10 @@ router.post('/', async (req, res) => {
 // POST /login - sign in user
 router.post('/login', async (req, res) => {
     const prisma = req.app.locals.prisma;
-    const { email, password } = req.body;
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const password = String(req.body?.password || '');
     const DUMMY_HASH = '$2a$10$7EqJtq98hPqEX7fNZaFWoOhi9A1j8GkRXKuX3sI5Yucs5cjox96D.';
-    if (!email || !password) {
+    if (!email || !password.trim()) {
         return res.status(400).json({ error: 'email and password are required' });
     }
     try {
@@ -187,7 +189,8 @@ router.put('/:id', authenticateJwt, async (req, res) => {
     if (!isOwnerOrRole(userId, req, 'ADMIN')) {
         return res.status(403).json({ error: 'Forbidden' });
     }
-    const { name, email, phone, address, preferences, role } = req.body;
+    const { name, phone, address, preferences, role } = req.body;
+    const email = req.body?.email === undefined ? undefined : String(req.body.email || '').trim().toLowerCase();
     const data = {};
     if (name !== undefined) data.name = name;
     if (email !== undefined) data.email = email;

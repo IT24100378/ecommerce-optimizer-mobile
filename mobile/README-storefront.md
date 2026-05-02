@@ -23,7 +23,9 @@ Pop-Location
 ```
 
 ## Notes
-- The API base URL is defined in `mobile/src/storefront/store.ts` as `API_BASE_URL`.
+- The API base URL is defined in `mobile/src/config/api.ts` as `API_BASE_URL`.
+- Set `CLOUD_API_BASE_URL` to your Railway backend URL.
+- Keep `USE_LOCAL_API=false` to run fully on cloud without local backend.
 - Buttons and cards use `Pressable` with `android_ripple` and 48x48 touch targets.
 
 ## Architecture
