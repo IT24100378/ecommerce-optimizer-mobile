@@ -1,6 +1,8 @@
 const axios = require('axios');
 
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000/predict';
+const AI_SERVICE_HOST = process.env.AI_SERVICE_HOST || '';
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL
+    || (AI_SERVICE_HOST ? `http://${AI_SERVICE_HOST}/predict` : 'http://127.0.0.1:8000/predict');
 const AI_SERVICE_API_KEY = process.env.AI_SERVICE_API_KEY || '';
 const REQUEST_TIMEOUT_MS = 3000;
 

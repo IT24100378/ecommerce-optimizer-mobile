@@ -1,6 +1,7 @@
 services:
   - type: web
     name: ecommerce-optimizer-backend
+    plan: free
     runtime: node
     rootDir: backend
     buildCommand: npm install && npm run render-build
@@ -9,17 +10,17 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: ecommerce-optimizer-db
-          property: connectionString
+        sync: false
       - key: CORS_ORIGIN
-        value: '*'
+        sync: false
       # Dynamically inject the internal host:port of the AI service
       - key: AI_SERVICE_HOST
         fromService:
           type: pserv
           name: ecommerce-optimizer-ai
           property: hostport
+      - key: AI_SERVICE_API_KEY
+        sync: false
       - key: AI_AUTOSTART_ENABLED
         value: 'false'
 
@@ -31,12 +32,15 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
+      - key: AI_SERVICE_API_KEY
+        sync: false
       - key: ALLOW_UNSAFE_NO_API_KEY
         value: 'false'
 
   # Converted to type: web with runtime: static
   - type: web
     name: ecommerce-optimizer-frontend
+    plan: free
     runtime: static
     rootDir: Frontend
     buildCommand: npm install && npm run build
@@ -50,9 +54,9 @@ services:
         source: /*
         destination: /index.html
 
+# DATABASE_URL must be a MongoDB connection string for Prisma's mongodb provider.
 databases:
   - name: ecommerce-optimizer-db
+    plan: free
     databaseName: ecommerce_optimizer
     user: ecommerce_optimizer_user
-    # Blocks public internet access; allows only internal Render network
-    ipAllowList: []
