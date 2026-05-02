@@ -74,7 +74,7 @@ export default function ProfileScreen() {
 				});
 			}
 		} catch (err: any) {
-			setError(err?.response?.data?.error || 'Unable to authenticate.');
+			setError(err?.response?.data?.error || err?.message || 'Unable to authenticate.');
 		} finally {
 			setLoading(false);
 		}
