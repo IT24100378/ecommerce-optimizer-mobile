@@ -34,6 +34,14 @@ function parseIsoDate(value) {
 }
 
 function toProductWithCategoryName(product) {
+    if (!product) {
+        return {
+            id: null,
+            name: 'Unknown product',
+            sku: '',
+            category: '',
+        };
+    }
     return {
         ...product,
         category: product?.categoryRef?.name || '',
@@ -41,15 +49,32 @@ function toProductWithCategoryName(product) {
     };
 }
 
+async function listForecastsWithResolvedProducts(prisma, where, orderBy) {
+    const forecasts = await prisma.demandForecast.findMany({
+        where,
+        orderBy,
+    });
+    if (forecasts.length === 0) return [];
+
+    const productIds = [...new Set(forecasts.map((item) => item.productId).filter(Boolean))];
+    const products = await prisma.product.findMany({
+        where: { id: { in: productIds } },
+        include: { categoryRef: true },
+    });
+    const productMap = new Map(products.map((item) => [item.id, item]));
+
+    return forecasts.map((forecast) => ({
+        ...forecast,
+        product: toProductWithCategoryName(productMap.get(forecast.productId) || null),
+    }));
+}
+
 // GET / - list all forecasts with product info
 router.get('/', authenticateJwt, requireRole('ADMIN', 'VENDOR'), async (req, res) => {
     const prisma = req.app.locals.prisma;
     try {
-        const forecasts = await prisma.demandForecast.findMany({
-            include: { product: { include: { categoryRef: true } } },
-            orderBy: { generatedAt: 'desc' },
-        });
-        res.json(forecasts.map((forecast) => ({ ...forecast, product: toProductWithCategoryName(forecast.product) })));
+        const forecasts = await listForecastsWithResolvedProducts(prisma, undefined, { generatedAt: 'desc' });
+        res.json(forecasts);
     } catch (err) {
         return serverError(res, err);
     }
@@ -63,12 +88,8 @@ router.get('/product/:productId', authenticateJwt, requireRole('ADMIN', 'VENDOR'
         return res.status(400).json({ error: 'Invalid productId' });
     }
     try {
-        const forecasts = await prisma.demandForecast.findMany({
-            where: { productId },
-            include: { product: { include: { categoryRef: true } } },
-            orderBy: { forecastForDate: 'asc' },
-        });
-        res.json(forecasts.map((forecast) => ({ ...forecast, product: toProductWithCategoryName(forecast.product) })));
+        const forecasts = await listForecastsWithResolvedProducts(prisma, { productId }, { forecastForDate: 'asc' });
+        res.json(forecasts);
     } catch (err) {
         return serverError(res, err);
     }

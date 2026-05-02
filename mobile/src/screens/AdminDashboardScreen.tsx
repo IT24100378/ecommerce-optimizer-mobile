@@ -10,6 +10,7 @@ export default function AdminDashboardScreen() {
 	const token = useStorefrontStore((state) => state.user?.token);
 	const [stats, setStats] = useState<Record<string, number>>({});
 	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState('');
 	const modules = [
 		{ key: 'products', label: 'Products', route: 'AdminProducts' },
 		{ key: 'categories', label: 'Categories', route: 'AdminCategories' },
@@ -24,9 +25,10 @@ export default function AdminDashboardScreen() {
 	const fetchStats = useCallback(async () => {
 		if (!token) return;
 		setLoading(true);
+		setError('');
 		try {
 			const headers = { Authorization: `Bearer ${token}` };
-			const [products, categories, orders, inventory, promotions, users, forecasts, reviews] = await Promise.all([
+			const results = await Promise.allSettled([
 				axios.get(`${API_BASE_URL}/api/products`),
 				axios.get(`${API_BASE_URL}/api/categories`),
 				axios.get(`${API_BASE_URL}/api/orders`, { headers }),
@@ -36,16 +38,23 @@ export default function AdminDashboardScreen() {
 				axios.get(`${API_BASE_URL}/api/forecasts`, { headers }),
 				axios.get(`${API_BASE_URL}/api/reviews?adminView=true`, { headers }),
 			]);
+			const values = results.map((result) => (result.status === 'fulfilled' ? result.value : null));
+			const failedCount = results.filter((result) => result.status === 'rejected').length;
 			setStats({
-				products: Array.isArray(products.data) ? products.data.length : 0,
-				categories: Array.isArray(categories.data) ? categories.data.length : 0,
-				orders: Array.isArray(orders.data) ? orders.data.length : 0,
-				inventory: Array.isArray(inventory.data) ? inventory.data.length : 0,
-				promotions: Array.isArray(promotions.data) ? promotions.data.length : 0,
-				users: Array.isArray(users.data) ? users.data.length : 0,
-				forecasts: Array.isArray(forecasts.data) ? forecasts.data.length : 0,
-				reviews: Array.isArray(reviews.data) ? reviews.data.length : 0,
+				products: Array.isArray(values[0]?.data) ? values[0].data.length : 0,
+				categories: Array.isArray(values[1]?.data) ? values[1].data.length : 0,
+				orders: Array.isArray(values[2]?.data) ? values[2].data.length : 0,
+				inventory: Array.isArray(values[3]?.data) ? values[3].data.length : 0,
+				promotions: Array.isArray(values[4]?.data) ? values[4].data.length : 0,
+				users: Array.isArray(values[5]?.data) ? values[5].data.length : 0,
+				forecasts: Array.isArray(values[6]?.data) ? values[6].data.length : 0,
+				reviews: Array.isArray(values[7]?.data) ? values[7].data.length : 0,
 			});
+			if (failedCount > 0) {
+				setError(`${failedCount} module(s) failed to load. You can still use available modules.`);
+			}
+		} catch (err: any) {
+			setError(err?.response?.data?.error || err?.message || 'Failed to load dashboard data.');
 		} finally {
 			setLoading(false);
 		}
@@ -68,6 +77,7 @@ export default function AdminDashboardScreen() {
 					</Pressable>
 				</View>
 				{loading ? <ActivityIndicator color="#2563eb" style={styles.loader} /> : null}
+				{error ? <Text style={styles.errorText}>{error}</Text> : null}
 				{modules.map((module) => (
 					<Pressable
 						key={module.route}
@@ -110,6 +120,11 @@ const styles = StyleSheet.create({
 	loader: {
 		marginTop: 12,
 		marginBottom: 8,
+	},
+	errorText: {
+		color: '#f87171',
+		fontSize: 12,
+		marginBottom: 10,
 	},
 	title: {
 		color: '#f8fafc',
