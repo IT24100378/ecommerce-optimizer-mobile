@@ -47,7 +47,7 @@ export default function AdminReviewsScreen() {
 		if (!headers) return;
 		try {
 			await axios.put(`${API_BASE_URL}/api/reviews/${review.id}`, {
-				isHidded: !review.isHidded,
+				isHidded: !Boolean(review.isHidded),
 			}, { headers });
 			await fetchRows();
 		} catch (error: any) {
