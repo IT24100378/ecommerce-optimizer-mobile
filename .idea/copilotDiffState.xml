@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CopilotDiffPersistence">
+    <option name="pendingDiffs">
+      <map>
+        <entry key="/App (snapshot).tsx">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="/App (snapshot).tsx" />
+              <option name="originalContent" value="import React from 'react';&#10;import { NavigationContainer } from '@react-navigation/native';&#10;import { createNativeStackNavigator } from '@react-navigation/native-stack';&#10;import { SafeAreaProvider } from 'react-native-safe-area-context';&#10;import { enableScreens } from 'react-native-screens';&#10;import ProductDetailScreen from './src/screens/ProductDetailScreen';&#10;import ProductFeedScreen from './src/screens/ProductFeedScreen';&#10;&#10;enableScreens();&#10;&#10;const Stack = createNativeStackNavigator();&#10;&#10;export default function App() {&#10;    return (&#10;        &lt;SafeAreaProvider&gt;&#10;            &lt;NavigationContainer&gt;&#10;                &lt;Stack.Navigator&#10;                    screenOptions={{&#10;                        headerShown: false,&#10;                        animation: 'slide_from_right',&#10;                    }}&#10;                &gt;&#10;                    &lt;Stack.Screen name=&quot;ProductFeed&quot; component={ProductFeedScreen} /&gt;&#10;                    &lt;Stack.Screen name=&quot;ProductDetail&quot; component={ProductDetailScreen} /&gt;&#10;                &lt;/Stack.Navigator&gt;&#10;            &lt;/NavigationContainer&gt;&#10;        &lt;/SafeAreaProvider&gt;&#10;    );&#10;}&#10;" />
+              <option name="updatedContent" value="import React from 'react';&#10;import { NavigationContainer } from '@react-navigation/native';&#10;import { SafeAreaProvider } from 'react-native-safe-area-context';&#10;import { enableScreens } from 'react-native-screens';&#10;import RootNavigator from './src/navigation/RootNavigator';&#10;&#10;enableScreens();&#10;&#10;export default function App() {&#10;    return (&#10;        &lt;SafeAreaProvider&gt;&#10;            &lt;NavigationContainer&gt;&#10;                &lt;RootNavigator /&gt;&#10;            &lt;/NavigationContainer&gt;&#10;        &lt;/SafeAreaProvider&gt;&#10;    );&#10;}" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>
