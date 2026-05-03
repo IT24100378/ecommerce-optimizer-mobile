@@ -2,6 +2,8 @@ function normalizeCategoryName(value) {
     return String(value || '').trim().replace(/\s+/g, ' ');
 }
 
+const DEFAULT_CATEGORY_NAME = 'Uncategorized';
+
 function isValidObjectId(value) {
     return typeof value === 'string' && /^[a-fA-F0-9]{24}$/.test(value);
 }
@@ -27,6 +29,20 @@ async function getAllCategories(prisma) {
         orderBy: { name: 'asc' },
     });
     return categories.map((item) => item.name);
+}
+
+async function ensureDefaultCategory(prisma, tx = prisma) {
+    const existing = await tx.category.findFirst({
+        where: { name: { equals: DEFAULT_CATEGORY_NAME, mode: 'insensitive' } },
+        select: { id: true, name: true },
+    });
+    if (existing) {
+        return existing;
+    }
+    return tx.category.create({
+        data: { name: DEFAULT_CATEGORY_NAME },
+        select: { id: true, name: true },
+    });
 }
 
 async function createCategory(prisma, rawName) {
@@ -116,6 +132,10 @@ async function deleteCategory(prisma, categoryId, options = {}) {
         throw err;
     }
 
+    if (existing.name.toLowerCase() === DEFAULT_CATEGORY_NAME.toLowerCase()) {
+        throw badRequest('The default Uncategorized category cannot be deleted.');
+    }
+
     if (migrateToCategoryId) {
         const target = await prisma.category.findUnique({
             where: { id: migrateToCategoryId },
@@ -148,23 +168,25 @@ async function deleteCategory(prisma, categoryId, options = {}) {
         return result;
     }
 
-    const [linkedProductCount, linkedPromotionCount] = await Promise.all([
-        prisma.product.count({ where: { categoryId } }),
-        prisma.promotion.count({ where: { categoryId } }),
-    ]);
+    const result = await prisma.$transaction(async (tx) => {
+        const defaultCategory = await ensureDefaultCategory(prisma, tx);
+        if (defaultCategory.id === categoryId) {
+            throw badRequest('The default Uncategorized category cannot be deleted.');
+        }
+        const movedProducts = await tx.product.updateMany({
+            where: { categoryId },
+            data: { categoryId: defaultCategory.id },
+        });
+        await tx.category.delete({ where: { id: categoryId } });
+        return {
+            deletedCategoryId: categoryId,
+            migratedToCategoryId: defaultCategory.id,
+            migratedProducts: movedProducts.count,
+            migratedPromotions: 0,
+        };
+    });
 
-    if (linkedProductCount > 0 || linkedPromotionCount > 0) {
-        throw conflict(
-            'Category cannot be deleted while products or promotions are attached. Migrate first.',
-            {
-                linkedProductCount,
-                linkedPromotionCount,
-            }
-        );
-    }
-
-    await prisma.category.delete({ where: { id: categoryId } });
-    return { deletedCategoryId: categoryId, migratedToCategoryId: null, migratedProducts: 0, migratedPromotions: 0 };
+    return result;
 }
 
 module.exports = {
@@ -174,5 +196,7 @@ module.exports = {
     updateCategory,
     deleteCategory,
     normalizeCategoryName,
+    ensureDefaultCategory,
+    DEFAULT_CATEGORY_NAME,
 };
 

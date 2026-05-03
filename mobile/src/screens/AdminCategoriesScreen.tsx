@@ -99,14 +99,6 @@ export default function AdminCategoriesScreen() {
 	};
 
 	const handleDelete = (category: CategoryRow) => {
-		const linkedProducts = categoryProductCounts[category.name] || 0;
-		if (linkedProducts > 0) {
-			Alert.alert(
-				'Categories',
-				`Cannot delete "${category.name}". Delete ${linkedProducts} product(s) in this category first.`
-			);
-			return;
-		}
 		Alert.alert('Delete Category', `Delete "${category.name}"?`, [
 			{ text: 'Cancel', style: 'cancel' },
 			{

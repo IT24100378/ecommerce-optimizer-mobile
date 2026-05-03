@@ -34,12 +34,6 @@ export default function ProductForm({ initialData, onSuccess, onCancel, categori
         }
     }, [initialData]);
 
-    useEffect(() => {
-        if (!initialData && !form.category && categories.length > 0) {
-            setForm((prev) => ({ ...prev, category: categories[0] }));
-        }
-    }, [categories, form.category, initialData]);
-
     const handleChange = (e) => {
         const { name, value } = e.target;
         setForm((prev) => ({ ...prev, [name]: value }));
@@ -117,20 +111,17 @@ export default function ProductForm({ initialData, onSuccess, onCancel, categori
 
             <div>
                 <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                    Category <span className="text-red-500">*</span>
+                    Category
                 </label>
                 <select
                     id="category"
                     name="category"
-                    required
                     value={form.category}
                     onChange={handleChange}
-                    disabled={categoryOptions.length === 0}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100 disabled:text-gray-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 >
-                    {categoryOptions.length === 0 ? (
-                        <option value="">No categories available</option>
-                    ) : (
+                    <option value="">Uncategorized (default)</option>
+                    {categoryOptions.length > 0 && (
                         categoryOptions.map((categoryName) => (
                             <option key={categoryName} value={categoryName}>
                                 {categoryName}
@@ -138,9 +129,6 @@ export default function ProductForm({ initialData, onSuccess, onCancel, categori
                         ))
                     )}
                 </select>
-                {categoryOptions.length === 0 && (
-                    <p className="text-xs text-amber-600 mt-1">Create a category first, then add products.</p>
-                )}
             </div>
 
             <p className="text-xs text-gray-500">
@@ -173,7 +161,7 @@ export default function ProductForm({ initialData, onSuccess, onCancel, categori
                 </button>
                 <button
                     type="submit"
-                    disabled={submitting || categoryOptions.length === 0}
+                    disabled={submitting}
                     className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg disabled:opacity-50"
                 >
                     {submitting ? 'Saving…' : initialData ? 'Update Product' : 'Create Product'}

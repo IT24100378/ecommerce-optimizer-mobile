@@ -78,8 +78,8 @@ export default function AdminProductDashboardScreen() {
 	};
 
 	const submitProduct = async () => {
-		if (!form.name.trim() || !form.sku.trim() || !form.category.trim()) {
-			Alert.alert('Product', 'Name, SKU, and Category are required.');
+		if (!form.name.trim() || !form.sku.trim()) {
+			Alert.alert('Product', 'Name and SKU are required.');
 			return;
 		}
 		const basePrice = Number(form.basePrice);
@@ -183,6 +183,12 @@ export default function AdminProductDashboardScreen() {
 							<TextInput value={form.sku} onChangeText={(value) => setForm((prev) => ({ ...prev, sku: value }))} placeholder="SKU" placeholderTextColor="#64748b" style={styles.input} />
 							<Text style={styles.label}>Category</Text>
 							<ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryWrap}>
+								<Pressable
+									onPress={() => setForm((prev) => ({ ...prev, category: '' }))}
+									style={!form.category ? styles.categoryPillActive : styles.categoryPill}
+								>
+									<Text style={styles.categoryText}>Uncategorized</Text>
+								</Pressable>
 								{categories.map((category) => (
 									<Pressable
 										key={category}

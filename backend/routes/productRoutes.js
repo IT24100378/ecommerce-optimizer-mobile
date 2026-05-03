@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticateJwt, requireRole } = require('../middleware/auth');
 const { ensureInventoryRecord, mapProductWithInventory } = require('../services/inventoryService');
-const { normalizeCategoryName } = require('../services/categoryService');
+const { normalizeCategoryName, ensureDefaultCategory } = require('../services/categoryService');
 const { applyNativePromotionPricing } = require('../services/promotionService');
 const {
     parseProductIdentifier,
@@ -22,7 +22,8 @@ function normalizeSku(value) {
 async function resolveCategorySelection(prisma, category) {
     const normalizedCategory = normalizeCategoryName(category);
     if (!normalizedCategory) {
-        return { ok: false, error: 'Category is required.' };
+        const defaultCategory = await ensureDefaultCategory(prisma);
+        return { ok: true, categoryId: defaultCategory.id, categoryName: defaultCategory.name };
     }
 
     const existingCategory = await prisma.category.findFirst({

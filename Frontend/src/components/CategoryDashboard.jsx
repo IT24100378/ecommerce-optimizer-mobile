@@ -90,11 +90,6 @@ export default function CategoryDashboard() {
   };
 
   const handleDelete = async (name) => {
-    const linkedProducts = productCountByCategory[name] || 0;
-    if (linkedProducts > 0) {
-      setActionError(`Cannot delete "${name}". Delete ${linkedProducts} product(s) in this category first.`);
-      return;
-    }
     if (!window.confirm(`Delete category "${name}"?`)) return;
 
     setSaving(true);
@@ -105,12 +100,7 @@ export default function CategoryDashboard() {
       await fetchData();
     } catch (err) {
       const backendMessage = err.response?.data?.error;
-      const linkedCount = err.response?.data?.details?.linkedProductCount;
-      if (linkedCount > 0) {
-        setActionError(`Cannot delete "${name}". Delete ${linkedCount} product(s) in this category first.`);
-      } else {
-        setActionError(backendMessage || 'Failed to delete category.');
-      }
+      setActionError(backendMessage || 'Failed to delete category.');
     } finally {
       setSaving(false);
     }
