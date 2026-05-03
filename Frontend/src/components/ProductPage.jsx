@@ -59,12 +59,18 @@ export default function ProductPage({ product, user, onAddToCart, added, onBack,
   const basePrice = Number(product.basePrice ?? 0);
   const effectivePrice = Number(product.effectivePrice ?? product.basePrice ?? 0);
   const hasDiscount = effectivePrice < basePrice;
+  const productId = product.id ?? product._id ?? product.productCode ?? product.sku;
 
   const fetchReviews = useCallback(async () => {
+    if (!productId) {
+      setReviews([]);
+      setLoadingReviews(false);
+      return;
+    }
     setLoadingReviews(true);
     try {
       const { data } = await axios.get(`${API}/api/reviews`, {
-        params: { productId: product.id },
+        params: { productId },
       });
       setReviews(data);
     } catch (e) {
@@ -72,13 +78,15 @@ export default function ProductPage({ product, user, onAddToCart, added, onBack,
     } finally {
       setLoadingReviews(false);
     }
-  }, [product.id]);
+  }, [productId]);
 
   const fetchCanReview = useCallback(async () => {
-    if (!user) { setCanReviewData(null); return; }
+    if (!user || !productId) { setCanReviewData(null); return; }
     try {
+      const token = localStorage.getItem('sf_token') || user?.token;
       const { data } = await axios.get(`${API}/api/reviews/can-review`, {
-        params: { userId: user.id, productId: product.id },
+        params: { productId },
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
       setCanReviewData(data);
       if (data.existingReview) {
@@ -89,8 +97,9 @@ export default function ProductPage({ product, user, onAddToCart, added, onBack,
       }
     } catch (e) {
       console.error('Failed to check review eligibility', e);
+      setCanReviewData({ canReview: false, reason: 'Unable to load review status right now' });
     }
-  }, [user, product.id]);
+  }, [user, productId]);
 
   useEffect(() => {
     fetchReviews();
@@ -100,6 +109,10 @@ export default function ProductPage({ product, user, onAddToCart, added, onBack,
   const handleSubmitReview = async (e) => {
     e.preventDefault();
     if (!user) { onRequireAuth('signin'); return; }
+    if (!productId) {
+      setReviewError('Product ID is missing. Please refresh and try again.');
+      return;
+    }
     if (!isValidRating(reviewForm.rating)) {
       setReviewError('Please select a star rating between 1 and 5');
       return;
@@ -109,7 +122,7 @@ export default function ProductPage({ product, user, onAddToCart, added, onBack,
     try {
       await axios.post(`${API}/api/reviews`, {
         userId: user.id,
-        productId: product.id,
+        productId,
         rating: reviewForm.rating,
         comment: reviewForm.comment,
       });

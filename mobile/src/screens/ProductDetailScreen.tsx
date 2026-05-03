@@ -48,6 +48,7 @@ export default function ProductDetailScreen() {
 	const [reviewForm, setReviewForm] = useState({ rating: 0, comment: '' });
 	const [reviewError, setReviewError] = useState('');
 	const [saving, setSaving] = useState(false);
+	const productId = String(product?.id ?? product?._id ?? product?.productCode ?? '').trim();
 
 	const headers = useMemo(() => (user?.token ? { Authorization: `Bearer ${user.token}` } : undefined), [user?.token]);
 
@@ -103,27 +104,31 @@ export default function ProductDetailScreen() {
 	}, [routeParams?.product, routeParams?.productId]);
 
 	const fetchReviews = useCallback(async () => {
-		if (!product?.id) return;
+		if (!productId) {
+			setReviews([]);
+			setLoadingReviews(false);
+			return;
+		}
 		setLoadingReviews(true);
 		try {
 			const { data } = await axios.get(`${API_BASE_URL}/api/reviews`, {
-				params: { productId: String(product.id) },
+				params: { productId },
 			});
 			setReviews(Array.isArray(data) ? data : []);
 		} finally {
 			setLoadingReviews(false);
 		}
-	}, [product?.id]);
+	}, [productId]);
 
 	const fetchCanReview = useCallback(async () => {
-		if (!headers || !product?.id) {
+		if (!headers || !productId) {
 			setCanReviewData(null);
 			return;
 		}
 		try {
 			const { data } = await axios.get(`${API_BASE_URL}/api/reviews/can-review`, {
 				headers,
-				params: { productId: String(product.id) },
+				params: { productId },
 			});
 			setCanReviewData(data);
 			if (data?.existingReview) {
@@ -135,7 +140,7 @@ export default function ProductDetailScreen() {
 		} catch {
 			setCanReviewData(null);
 		}
-	}, [headers, product?.id]);
+	}, [headers, productId]);
 
 	useEffect(() => {
 		fetchReviews();
@@ -167,6 +172,10 @@ export default function ProductDetailScreen() {
 			Alert.alert('Reviews', 'Please sign in to write a review.');
 			return;
 		}
+		if (!productId) {
+			setReviewError('Product ID is missing. Please reopen this product.');
+			return;
+		}
 		if (reviewForm.rating < 1 || reviewForm.rating > 5) {
 			setReviewError('Select a rating between 1 and 5.');
 			return;
@@ -181,7 +190,7 @@ export default function ProductDetailScreen() {
 				}, { headers });
 			} else {
 				await axios.post(`${API_BASE_URL}/api/reviews`, {
-					productId: String(product.id),
+					productId,
 					rating: reviewForm.rating,
 					comment: reviewForm.comment,
 				}, { headers });
