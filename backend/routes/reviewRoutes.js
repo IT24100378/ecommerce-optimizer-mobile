@@ -2,10 +2,27 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const { authenticateJwt, requireRole } = require('../middleware/auth');
+const { parseProductIdentifier, findProductByIdentifier } = require('../services/productCodeService');
 
 function serverError(res, err) {
     console.error('[reviews] Route error:', err);
     return res.status(500).json({ error: 'Internal server error' });
+}
+
+function isValidObjectId(value) {
+    return typeof value === 'string' && /^[a-fA-F0-9]{24}$/.test(value);
+}
+
+async function resolveProductId(prisma, rawProductIdentifier) {
+    const parsed = parseProductIdentifier(rawProductIdentifier);
+    if (parsed.kind === 'invalid') {
+        return { ok: false, status: 400, error: 'Invalid product ID. Use Mongo ObjectId or numeric product code.' };
+    }
+    const product = await findProductByIdentifier(prisma, rawProductIdentifier, { select: { id: true } });
+    if (!product) {
+        return { ok: false, status: 404, error: 'Product not found' };
+    }
+    return { ok: true, productId: product.id };
 }
 
 // GET /can-review?productId=Y
@@ -19,7 +36,11 @@ router.get('/can-review', authenticateJwt, requireRole('CUSTOMER', 'ADMIN'), asy
     }
     try {
         const uid = req.user.id;
-        const pid = parseInt(productId);
+        const resolvedProduct = await resolveProductId(prisma, productId);
+        if (!resolvedProduct.ok) {
+            return res.status(resolvedProduct.status).json({ error: resolvedProduct.error });
+        }
+        const pid = resolvedProduct.productId;
 
         // Check user exists
         const user = await prisma.user.findUnique({ where: { id: uid } });
@@ -52,11 +73,18 @@ router.get('/', async (req, res) => {
     const prisma = req.app.locals.prisma;
     const { productId, adminView } = req.query;
     const where = {};
-    if (productId) where.productId = parseInt(productId);
-    if (adminView !== 'true') {
-        where.isHidded = { not: true };
-    }
     try {
+        if (productId) {
+            const resolvedProduct = await resolveProductId(prisma, productId);
+            if (!resolvedProduct.ok) {
+                if (resolvedProduct.status === 404) return res.json([]);
+                return res.status(resolvedProduct.status).json({ error: resolvedProduct.error });
+            }
+            where.productId = resolvedProduct.productId;
+        }
+        if (adminView !== 'true') {
+            where.isHidded = { not: true };
+        }
         if (adminView === 'true') {
             const authHeader = req.headers.authorization || '';
             const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
@@ -91,8 +119,11 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     const prisma = req.app.locals.prisma;
     try {
+        if (!isValidObjectId(req.params.id)) {
+            return res.status(400).json({ error: 'Invalid review ID' });
+        }
         const review = await prisma.review.findUnique({
-            where: { id: parseInt(req.params.id) },
+            where: { id: req.params.id },
             include: {
                 user: { select: { id: true, name: true } },
                 product: { select: { id: true, name: true } },
@@ -115,7 +146,11 @@ router.post('/', authenticateJwt, requireRole('CUSTOMER', 'ADMIN'), async (req, 
     }
     try {
         const uid = req.user.id;
-        const pid = parseInt(productId);
+        const resolvedProduct = await resolveProductId(prisma, productId);
+        if (!resolvedProduct.ok) {
+            return res.status(resolvedProduct.status).json({ error: resolvedProduct.error });
+        }
+        const pid = resolvedProduct.productId;
 
         // Check user exists
         const user = await prisma.user.findUnique({ where: { id: uid } });
@@ -165,7 +200,10 @@ router.put('/:id', authenticateJwt, async (req, res) => {
     const prisma = req.app.locals.prisma;
     const { rating, comment, isHidded } = req.body;
     try {
-        const review = await prisma.review.findUnique({ where: { id: parseInt(req.params.id) } });
+        if (!isValidObjectId(req.params.id)) {
+            return res.status(400).json({ error: 'Invalid review ID' });
+        }
+        const review = await prisma.review.findUnique({ where: { id: req.params.id } });
         if (!review) return res.status(404).json({ error: 'Review not found' });
 
         const data = {};
@@ -187,7 +225,7 @@ router.put('/:id', authenticateJwt, async (req, res) => {
         }
 
         const updated = await prisma.review.update({
-            where: { id: parseInt(req.params.id) },
+            where: { id: req.params.id },
             data,
             include: {
                 user: { select: { id: true, name: true } },
@@ -205,14 +243,17 @@ router.put('/:id', authenticateJwt, async (req, res) => {
 router.delete('/:id', authenticateJwt, async (req, res) => {
     const prisma = req.app.locals.prisma;
     try {
-        const review = await prisma.review.findUnique({ where: { id: parseInt(req.params.id) } });
+        if (!isValidObjectId(req.params.id)) {
+            return res.status(400).json({ error: 'Invalid review ID' });
+        }
+        const review = await prisma.review.findUnique({ where: { id: req.params.id } });
         if (!review) return res.status(404).json({ error: 'Review not found' });
 
         if (req.user.role !== 'ADMIN' && req.user.id !== review.userId) {
             return res.status(403).json({ error: 'You can only delete your own reviews' });
         }
 
-        await prisma.review.delete({ where: { id: parseInt(req.params.id) } });
+        await prisma.review.delete({ where: { id: req.params.id } });
         return res.json({ message: 'Review deleted successfully' });
     } catch (err) {
         return serverError(res, err);
