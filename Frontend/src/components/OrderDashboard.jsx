@@ -101,6 +101,35 @@ export default function OrderDashboard() {
     }
   };
 
+  const renderOrderItems = (items = []) => (
+    <div className="space-y-2">
+      {items.map((item, idx) => {
+        const product = item.product || {};
+        const name = product.name || (item.productId ? `Product ${item.productId}` : 'Deleted product');
+        const imageUrl = product.imageUrl;
+        return (
+          <div key={item.id || `${item.productId}-${idx}`} className="flex items-center gap-2">
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt={name}
+                className="h-9 w-9 rounded-md object-cover border border-gray-200"
+              />
+            ) : (
+              <div className="h-9 w-9 rounded-md bg-gray-200 text-gray-500 text-[10px] flex items-center justify-center">
+                No img
+              </div>
+            )}
+            <div className="min-w-0">
+              <div className="text-sm text-gray-800 truncate max-w-[180px]">{name}</div>
+              <div className="text-xs text-gray-500">Qty {item.quantity} • ${Number(item.price ?? 0).toFixed(2)}</div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div>
       <style>{`@keyframes slideIn { from { opacity:0; transform:translateY(-16px);} to { opacity:1; transform:translateY(0);} }`}</style>
@@ -137,7 +166,9 @@ export default function OrderDashboard() {
                 <tr key={order.id} className="border-t border-gray-100 hover:bg-gray-50 transition-colors duration-150">
                   <td className="px-4 py-3 font-medium text-indigo-600">#{order.id}</td>
                   <td className="px-4 py-3">{order.user?.name || `User ${order.userId}`}</td>
-                  <td className="px-4 py-3 text-gray-500">{order.items?.length || 0} item(s)</td>
+                  <td className="px-4 py-3 text-gray-500">
+                    {order.items?.length ? renderOrderItems(order.items) : 'No items'}
+                  </td>
                   <td className="px-4 py-3 font-semibold">${Number(order.discountedTotal ?? order.totalAmount).toFixed(2)}</td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-700'}`}>

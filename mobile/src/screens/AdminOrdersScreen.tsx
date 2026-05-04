@@ -3,6 +3,7 @@ import {
 	ActivityIndicator,
 	Alert,
 	FlatList,
+	Image,
 	Pressable,
 	StyleSheet,
 	Text,
@@ -188,6 +189,29 @@ export default function AdminOrdersScreen() {
 							<Text style={styles.cardTitle}>Order #{item.id?.slice?.(-6) || item.id}</Text>
 							<Text style={styles.cardMeta}>{item.user?.name || item.user?.email || 'Customer'} • {(item.items || []).length} items</Text>
 							<Text style={styles.cardTotal}>${Number(item.discountedTotal ?? item.totalAmount ?? 0).toFixed(2)}</Text>
+							{Array.isArray(item.items) && item.items.length > 0 ? (
+								<View style={styles.itemList}>
+									{item.items.map((orderItem: any, index: number) => {
+										const product = orderItem.product || {};
+										const name = product.name || (orderItem.productId ? `Product ${orderItem.productId}` : 'Deleted product');
+										return (
+											<View key={orderItem.id || `${orderItem.productId}-${index}`} style={styles.itemRow}>
+												{product.imageUrl ? (
+													<Image source={{ uri: product.imageUrl }} style={styles.itemImage} />
+												) : (
+													<View style={styles.itemImageFallback}>
+														<Text style={styles.itemImageFallbackText}>No Img</Text>
+													</View>
+												)}
+												<View style={styles.itemInfo}>
+													<Text style={styles.itemName} numberOfLines={1}>{name}</Text>
+													<Text style={styles.itemMeta}>Qty {orderItem.quantity} • ${Number(orderItem.price ?? 0).toFixed(2)}</Text>
+												</View>
+											</View>
+										);
+									})}
+								</View>
+							) : null}
 							<View style={styles.inlineActions}>
 								<FlatList
 									horizontal
@@ -240,4 +264,12 @@ const styles = StyleSheet.create({
 	statusPill: { backgroundColor: '#374151', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, marginRight: 6 },
 	statusPillActive: { backgroundColor: '#4f46e5', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, marginRight: 6 },
 	statusText: { color: '#fff', fontSize: 10, fontWeight: '600' },
+	itemList: { marginTop: 10, gap: 8 },
+	itemRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+	itemImage: { width: 40, height: 40, borderRadius: 8, backgroundColor: '#1f2937' },
+	itemImageFallback: { width: 40, height: 40, borderRadius: 8, backgroundColor: '#1f2937', alignItems: 'center', justifyContent: 'center' },
+	itemImageFallbackText: { color: '#94a3b8', fontSize: 10 },
+	itemInfo: { flex: 1 },
+	itemName: { color: '#f8fafc', fontSize: 12, fontWeight: '600' },
+	itemMeta: { color: '#94a3b8', fontSize: 11, marginTop: 2 },
 });
