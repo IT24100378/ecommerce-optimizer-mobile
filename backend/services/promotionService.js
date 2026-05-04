@@ -1,3 +1,4 @@
+// Promotion service: validation, overlap checks, and pricing helpers.
 const PROMOTION_TYPES = {
     EVENT: 'EVENT',
     CATEGORY: 'CATEGORY',
@@ -11,6 +12,7 @@ const PROMOTION_PRIORITY = {
     [PROMOTION_TYPES.EVENT]: 1,
 };
 
+// Creates a typed HTTP error with optional details payload.
 function createHttpError(statusCode, message, details = null) {
     const err = new Error(message);
     err.statusCode = statusCode;
@@ -20,6 +22,7 @@ function createHttpError(statusCode, message, details = null) {
     return err;
 }
 
+// Parses a date value or throws on invalid input.
 function toDate(value, label) {
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) {
@@ -28,6 +31,7 @@ function toDate(value, label) {
     return parsed;
 }
 
+// Parses a positive number or throws on invalid input.
 function toPositiveNumber(value, label) {
     const parsed = Number.parseFloat(value);
     if (Number.isNaN(parsed) || parsed <= 0) {
@@ -36,6 +40,7 @@ function toPositiveNumber(value, label) {
     return parsed;
 }
 
+// Parses a positive integer or throws on invalid input.
 function toPositiveInt(value, label) {
     const parsed = Number.parseInt(value, 10);
     if (!Number.isInteger(parsed) || parsed <= 0) {
@@ -44,15 +49,18 @@ function toPositiveInt(value, label) {
     return parsed;
 }
 
+// Normalizes promo code values for comparison.
 function normalizeCode(value) {
     const normalized = String(value || '').trim().toUpperCase();
     return normalized || null;
 }
 
+// Validates Mongo ObjectId strings.
 function isValidObjectId(value) {
     return typeof value === 'string' && /^[a-fA-F0-9]{24}$/.test(value);
 }
 
+// Normalizes ObjectId inputs with a friendly error message.
 function normalizeObjectId(value, label) {
     const id = String(value ?? '').trim();
     if (!isValidObjectId(id)) {
@@ -61,6 +69,7 @@ function normalizeObjectId(value, label) {
     return id;
 }
 
+// Picks the highest-priority promotion from candidates.
 function getBestPromotion(candidates) {
     if (!candidates.length) return null;
     return candidates.sort((a, b) => {
@@ -72,6 +81,7 @@ function getBestPromotion(candidates) {
     })[0];
 }
 
+// Validates and normalizes promotion payloads for persistence.
 async function validateAndNormalizePromotionInput(prisma, payload, options = {}) {
     const { existingPromotion = null } = options;
     const type = String(payload.type || existingPromotion?.type || '').trim().toUpperCase();
@@ -202,6 +212,7 @@ async function validateAndNormalizePromotionInput(prisma, payload, options = {})
     };
 }
 
+// Checks for overlapping promotion windows (no-op for native promotions).
 async function validatePromotionOverlap(prisma, promotionData, options = {}) {
     void prisma;
     void promotionData;
@@ -210,6 +221,7 @@ async function validatePromotionOverlap(prisma, promotionData, options = {}) {
     // At runtime, the highest discount among active PRODUCT/CATEGORY promotions is applied.
 }
 
+// Resolves active promotions for the provided products.
 async function getActiveNativePromotionMap(prisma, products, now = new Date()) {
     if (!products.length) return new Map();
 
@@ -251,6 +263,7 @@ async function getActiveNativePromotionMap(prisma, products, now = new Date()) {
     return promotionMap;
 }
 
+// Applies active native promotions to product pricing.
 async function applyNativePromotionPricing(prisma, products, now = new Date()) {
     const promotionMap = await getActiveNativePromotionMap(prisma, products, now);
     return products.map((product) => {
@@ -274,6 +287,7 @@ async function applyNativePromotionPricing(prisma, products, now = new Date()) {
     });
 }
 
+// Resolves an event promotion from a promo code.
 async function resolveEventPromotionByCode(prisma, promoCode, now = new Date()) {
     const code = normalizeCode(promoCode);
     if (!code) {

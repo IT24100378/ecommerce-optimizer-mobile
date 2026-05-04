@@ -1,7 +1,10 @@
+// Inventory service: stock record creation and adjustments.
+// Validates Mongo ObjectId strings.
 function isValidObjectId(value) {
     return typeof value === 'string' && /^[a-fA-F0-9]{24}$/.test(value);
 }
 
+// Ensures an inventory record exists for a given product.
 async function ensureInventoryRecord(prisma, productId) {
     if (!isValidObjectId(productId)) {
         throw new Error('Invalid productId for inventory operation');
@@ -34,6 +37,7 @@ async function ensureInventoryRecord(prisma, productId) {
     }
 }
 
+// Mirrors inventory stock changes onto the product record.
 async function syncProductStockMirror(prisma, productId, stockLevel) {
     await prisma.product.update({
         where: { id: productId },
@@ -41,6 +45,7 @@ async function syncProductStockMirror(prisma, productId, stockLevel) {
     });
 }
 
+// Adjusts stock and writes inventory adjustments for audit.
 async function adjustStock(prisma, params) {
     const {
         productId,
@@ -118,6 +123,7 @@ async function adjustStock(prisma, params) {
     return updated;
 }
 
+// Maps a product to a response shape with computed stock fields.
 function mapProductWithInventory(product) {
     const stockLevel = product?.inventory?.stockLevel ?? product?.stockQuantity ?? 0;
     return {

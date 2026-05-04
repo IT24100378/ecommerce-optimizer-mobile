@@ -1,19 +1,24 @@
+// Category service: normalization and CRUD helpers for catalog categories.
+// Normalizes category names for consistent matching.
 function normalizeCategoryName(value) {
     return String(value || '').trim().replace(/\s+/g, ' ');
 }
 
 const DEFAULT_CATEGORY_NAME = 'Uncategorized';
 
+// Validates Mongo ObjectId strings.
 function isValidObjectId(value) {
     return typeof value === 'string' && /^[a-fA-F0-9]{24}$/.test(value);
 }
 
+// Creates a 400 HTTP error with the given message.
 function badRequest(message) {
     const err = new Error(message);
     err.statusCode = 400;
     return err;
 }
 
+// Creates a 409 HTTP error with optional details.
 function conflict(message, details) {
     const err = new Error(message);
     err.statusCode = 409;
@@ -23,6 +28,7 @@ function conflict(message, details) {
     return err;
 }
 
+// Returns all category names for public lists.
 async function getAllCategories(prisma) {
     const categories = await prisma.category.findMany({
         select: { name: true },
@@ -31,6 +37,7 @@ async function getAllCategories(prisma) {
     return categories.map((item) => item.name);
 }
 
+// Ensures the default category exists and returns it.
 async function ensureDefaultCategory(prisma, tx = prisma) {
     const existing = await tx.category.findFirst({
         where: { name: { equals: DEFAULT_CATEGORY_NAME, mode: 'insensitive' } },
@@ -45,6 +52,7 @@ async function ensureDefaultCategory(prisma, tx = prisma) {
     });
 }
 
+// Creates a new category after validation.
 async function createCategory(prisma, rawName) {
     const name = normalizeCategoryName(rawName);
     if (!name) {
@@ -64,6 +72,7 @@ async function createCategory(prisma, rawName) {
     return name;
 }
 
+// Returns category records with IDs for admin views.
 async function getAllCategoriesWithIds(prisma) {
     return prisma.category.findMany({
         select: { id: true, name: true, createdAt: true },
@@ -71,6 +80,7 @@ async function getAllCategoriesWithIds(prisma) {
     });
 }
 
+// Updates an existing category name.
 async function updateCategory(prisma, categoryId, rawName) {
     if (!isValidObjectId(categoryId)) {
         throw badRequest('Invalid category id.');
@@ -109,6 +119,7 @@ async function updateCategory(prisma, categoryId, rawName) {
     });
 }
 
+// Deletes a category and optionally migrates references.
 async function deleteCategory(prisma, categoryId, options = {}) {
     if (!isValidObjectId(categoryId)) {
         throw badRequest('Invalid category id.');
@@ -199,4 +210,3 @@ module.exports = {
     ensureDefaultCategory,
     DEFAULT_CATEGORY_NAME,
 };
-

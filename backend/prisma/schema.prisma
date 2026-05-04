@@ -11,6 +11,7 @@ datasource db {
 }
 
 // 1. User Management (Jayakody's Module)
+// User accounts for authentication and ownership of orders/reviews.
 model User {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String
@@ -27,6 +28,7 @@ model User {
 }
 
 // 2. Product & Catalog Management (Razni's Module - Your Module!)
+// Product catalog entries and their relationships.
 model Product {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   productCode Int?
@@ -52,6 +54,7 @@ model Product {
   @@index([productCode])
 }
 
+// Sequence counter for product codes.
 model Counter {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   key       String   @unique
@@ -59,6 +62,7 @@ model Counter {
   updatedAt DateTime @updatedAt
 }
 
+// Product categories for catalog grouping.
 model Category {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String   @unique
@@ -68,6 +72,7 @@ model Category {
   categoryPromotions Promotion[] @relation("CategoryPromotion")
 }
 
+// Promotion types for discounts.
 enum PromotionType {
   EVENT
   CATEGORY
@@ -75,6 +80,7 @@ enum PromotionType {
 }
 
 // 3. Inventory Control (Bandara's Module)
+// Inventory records tied to products.
 model Inventory {
   id                String   @id @default(auto()) @map("_id") @db.ObjectId
   productId         String   @unique @db.ObjectId
@@ -85,6 +91,7 @@ model Inventory {
 }
 
 // 4. Order Management (Janith's Module)
+// Customer orders and their line items.
 model Order {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   userId      String   @db.ObjectId
@@ -98,6 +105,7 @@ model Order {
   inventoryAdjustments InventoryAdjustment[]
 }
 
+// Inventory adjustment audit trail.
 model InventoryAdjustment {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   productId String   @db.ObjectId
@@ -114,6 +122,7 @@ model InventoryAdjustment {
 }
 
 // Belongs to Order Management (Crucial for AI historical data)
+// Order line items storing quantity and price at purchase.
 model OrderItem {
   id        String  @id @default(auto()) @map("_id") @db.ObjectId
   orderId   String  @db.ObjectId
@@ -125,6 +134,7 @@ model OrderItem {
 }
 
 // 5. Review & Feedback Management (Sathira's Module)
+// Customer reviews with moderation state.
 model Review {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   userId    String   @db.ObjectId
@@ -140,6 +150,7 @@ model Review {
 }
 
 // 6. Promotion Management (Jayaweera's Module)
+// Promotions scoped to events, categories, or products.
 model Promotion {
   id                 String   @id @default(auto()) @map("_id") @db.ObjectId
   campaignName       String
@@ -160,6 +171,7 @@ model Promotion {
 }
 
 // 7. AI Output Storage (Vendor Analytics Dashboard)
+// AI-generated demand forecasts per product and date.
 model DemandForecast {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
   productId       String   @db.ObjectId

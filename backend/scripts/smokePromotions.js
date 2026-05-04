@@ -1,3 +1,4 @@
+// Smoke test for promotion validation and priority behavior.
 const { PrismaClient } = require('@prisma/client');
 const {
     PROMOTION_TYPES,
@@ -7,18 +8,21 @@ const {
     resolveEventPromotionByCode,
 } = require('../services/promotionService');
 
+// Returns a new Date offset by the given number of days.
 function addDays(baseDate, days) {
     const next = new Date(baseDate);
     next.setUTCDate(next.getUTCDate() + days);
     return next;
 }
 
+// Creates a promotion after validation and overlap checks.
 async function createPromotion(prisma, payload) {
     const normalized = await validateAndNormalizePromotionInput(prisma, payload);
     await validatePromotionOverlap(prisma, normalized);
     return prisma.promotion.create({ data: normalized });
 }
 
+// Runs the end-to-end promotion smoke test.
 async function main() {
     const prisma = new PrismaClient();
     const createdIds = [];
@@ -100,4 +104,3 @@ main().catch((err) => {
     console.error('Promotion smoke test failed:', err.message || err);
     process.exitCode = 1;
 });
-

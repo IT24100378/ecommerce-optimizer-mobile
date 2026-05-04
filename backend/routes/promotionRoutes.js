@@ -1,3 +1,4 @@
+// Promotion routes: create, validate, and apply discounts.
 const express = require('express');
 const router = express.Router();
 const { authenticateJwt, requireRole } = require('../middleware/auth');
@@ -9,10 +10,12 @@ const {
     resolveEventPromotionByCode,
 } = require('../services/promotionService');
 
+// Validates Mongo ObjectId strings.
 function isValidObjectId(value) {
     return typeof value === 'string' && /^[a-fA-F0-9]{24}$/.test(value);
 }
 
+// Logs and formats promotion route errors.
 function serverError(res, err) {
     if (err?.statusCode) {
         return res.status(err.statusCode).json({ error: err.message });
@@ -24,6 +27,7 @@ function serverError(res, err) {
     return res.status(500).json({ error: 'Internal server error' });
 }
 
+// Parses checkout items for promotion eligibility.
 function parseCheckoutItems(items) {
     if (!Array.isArray(items)) return [];
     return items
@@ -41,6 +45,7 @@ function parseCheckoutItems(items) {
         ));
 }
 
+// Ensures promotions include referenced category/product info.
 async function serializePromotion(promo, prisma) {
     if (!promo) return promo;
     if (promo.categoryRef || promo.productRef) return promo;
@@ -53,6 +58,7 @@ async function serializePromotion(promo, prisma) {
     });
 }
 
+// Normalizes incoming promotion payload to internal shape.
 function buildPromotionPayload(input) {
     const type = String(input?.type || '').trim().toUpperCase();
     return {

@@ -1,3 +1,4 @@
+// Backend entrypoint: configures middleware, routes, and startup tasks.
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -22,6 +23,7 @@ const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
     .map((origin) => origin.trim())
     .filter(Boolean);
 
+// Checks whether the AI host resolves to a local address.
 function isLocalAiHost(host) {
     const normalizedHost = String(host || '').toLowerCase();
     return normalizedHost === 'localhost'
@@ -30,6 +32,7 @@ function isLocalAiHost(host) {
         || normalizedHost.startsWith('127.');
 }
 
+// Builds an auth rate limiter for login/signup endpoints.
 function createAuthLimiter() {
     return rateLimit({
         windowMs: 15 * 60 * 1000,
@@ -61,6 +64,7 @@ app.use('/api/users', (req, res, next) => {
     return next();
 });
 
+// Ensures the default admin account exists (and optionally resets credentials).
 async function ensureDefaultAdmin() {
     const adminEmail = String(process.env.ADMIN_EMAIL || 'admin@ecommerce.local').trim().toLowerCase();
     const defaultPassword = String(process.env.ADMIN_DEFAULT_PASSWORD || 'Admin@12345').trim();
@@ -103,10 +107,12 @@ async function ensureDefaultAdmin() {
     }
 }
 
+// Simple delay helper for retry loops.
 function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Attempts to open a TCP connection to host/port with a timeout.
 function canConnect(host, port, timeoutMs = 700) {
     return new Promise((resolve) => {
         const socket = new net.Socket();
@@ -127,6 +133,7 @@ function canConnect(host, port, timeoutMs = 700) {
     });
 }
 
+// Resolves the Python executable path for the local AI service.
 function resolveAiPythonPath() {
     if (process.env.AI_SERVICE_PYTHON && process.env.AI_SERVICE_PYTHON.trim()) {
         return process.env.AI_SERVICE_PYTHON.trim();
@@ -139,6 +146,7 @@ function resolveAiPythonPath() {
     return path.join(aiServiceDir, 'venv', 'bin', 'python');
 }
 
+// Starts or waits for the local AI service based on config.
 async function ensureAiServiceReady() {
     const autostartEnabled = (process.env.AI_AUTOSTART_ENABLED || 'true').toLowerCase() === 'true';
     if (!autostartEnabled) {
@@ -246,6 +254,7 @@ async function ensureAiServiceReady() {
     console.warn(message);
 }
 
+// Wires process signals to shut down the server and dependencies cleanly.
 function setupShutdownHooks(serverRef) {
     const shutdown = async () => {
         try {
@@ -271,6 +280,7 @@ app.get('/', (req, res) => {
     res.status(200).json({ status: 'ok', message: 'E-Commerce Inventory Optimizer API is running.' });
 });
 
+// Health check endpoint for uptime monitoring.
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok', service: 'backend' });
 });
@@ -294,6 +304,7 @@ app.use('/api/promotions', promotionRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/forecasts', forecastRoutes);
 
+// Centralized error handler for unhandled errors.
 app.use((err, req, res, next) => {
     void next;
     if (err && err.message === 'Not allowed by CORS') {
@@ -304,11 +315,13 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
+// Start HTTP server and attach shutdown hooks.
 const server = app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
 setupShutdownHooks(server);
 
+// Run startup routines (admin bootstrap, AI service readiness) in parallel.
 Promise.allSettled([ensureDefaultAdmin(), ensureAiServiceReady()]).then((results) => {
     results.forEach((result) => {
         if (result.status === 'rejected') {
@@ -317,6 +330,7 @@ Promise.allSettled([ensureDefaultAdmin(), ensureAiServiceReady()]).then((results
     });
 });
 
+// Backfill missing product codes on startup.
 backfillMissingProductCodes(prisma)
     .then(() => {
         console.log('[startup] Product code backfill completed.');

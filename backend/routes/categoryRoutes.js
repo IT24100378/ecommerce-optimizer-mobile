@@ -1,3 +1,4 @@
+// Category routes: admin and public endpoints for catalog categories.
 const express = require('express');
 const router = express.Router();
 const { authenticateJwt, requireRole } = require('../middleware/auth');
@@ -9,6 +10,7 @@ const {
     deleteCategory,
 } = require('../services/categoryService');
 
+// Normalizes error handling for category endpoints.
 function handleRouteError(res, err, fallbackMessage) {
     if (err?.statusCode) {
         return res.status(err.statusCode).json({ error: err.message });

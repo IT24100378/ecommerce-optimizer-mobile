@@ -1,3 +1,4 @@
+// Product routes: CRUD endpoints and helpers for product data.
 const express = require('express');
 const router = express.Router();
 const { authenticateJwt, requireRole } = require('../middleware/auth');
@@ -10,15 +11,18 @@ const {
     findProductByIdentifier,
 } = require('../services/productCodeService');
 
+// Logs and formats unexpected errors for product endpoints.
 function serverError(res, err, fallbackMessage) {
     console.error('[products] Route error:', err);
     return res.status(500).json({ error: fallbackMessage || 'Internal server error' });
 }
 
+// Normalizes SKU input to a trimmed string.
 function normalizeSku(value) {
     return String(value ?? '').trim();
 }
 
+// Resolves the category selection to an existing category or default.
 async function resolveCategorySelection(prisma, category) {
     const normalizedCategory = normalizeCategoryName(category);
     if (!normalizedCategory) {
@@ -37,6 +41,7 @@ async function resolveCategorySelection(prisma, category) {
     return { ok: true, categoryId: existingCategory.id, categoryName: existingCategory.name };
 }
 
+// Maps internal product shape to API response payload.
 function serializeProduct(product) {
     const mapped = mapProductWithInventory(product);
     const categoryName = product?.categoryRef?.name || '';

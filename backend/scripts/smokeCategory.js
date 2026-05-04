@@ -1,5 +1,7 @@
+// Smoke test for category/product relations and basic counts.
 const { PrismaClient } = require('@prisma/client');
 
+// Queries sample category/product data to verify relationships.
 async function main() {
     const prisma = new PrismaClient();
     try {
@@ -24,4 +26,3 @@ main().catch((err) => {
     console.error(err);
     process.exitCode = 1;
 });
-

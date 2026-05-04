@@ -1,5 +1,7 @@
+// JWT auth middleware and role helpers for protected routes.
 const jwt = require('jsonwebtoken');
 
+// Loads the JWT secret from environment config.
 function getJwtSecret() {
     const secret = process.env.JWT_SECRET;
     if (!secret) {
@@ -8,6 +10,7 @@ function getJwtSecret() {
     return secret;
 }
 
+// Validates Bearer tokens and attaches user context to the request.
 function authenticateJwt(req, res, next) {
     const authHeader = req.headers.authorization || '';
     const [scheme, token] = authHeader.split(' ');
@@ -29,6 +32,7 @@ function authenticateJwt(req, res, next) {
     }
 }
 
+// Creates a role-checking middleware for privileged routes.
 function requireRole(...allowedRoles) {
     const roleSet = new Set(allowedRoles);
     return (req, res, next) => {
@@ -42,6 +46,7 @@ function requireRole(...allowedRoles) {
     };
 }
 
+// Checks if the request user is the owner or has an allowed role.
 function isOwnerOrRole(targetUserId, req, ...allowedRoles) {
     if (!req.user) return false;
     if (String(req.user.id) === String(targetUserId)) return true;

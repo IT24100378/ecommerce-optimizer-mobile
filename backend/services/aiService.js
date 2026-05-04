@@ -1,3 +1,4 @@
+// AI service client: forwards feature payloads to the prediction API.
 const axios = require('axios');
 
 const AI_SERVICE_HOST = process.env.AI_SERVICE_HOST || '';
@@ -18,6 +19,7 @@ const REQUEST_TIMEOUT_MS = 3000;
  * @param {number} productData["Rolling_Mean_7D"]  - 7-day rolling mean of daily quantity.
  * @returns {Promise<{predicted_quantity: number}|null>} Prediction result, or null on failure.
  */
+// Requests a sales prediction from the configured AI service endpoint.
 async function getSalesPrediction(productData) {
     try {
         const response = await axios.post(AI_SERVICE_URL, productData, {

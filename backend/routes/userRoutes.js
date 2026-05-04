@@ -1,17 +1,21 @@
+// User routes: authentication, profile, and admin user management.
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { authenticateJwt, requireRole, isOwnerOrRole, getJwtSecret } = require('../middleware/auth');
 
+// Validates Mongo ObjectId strings.
 function isValidObjectId(value) {
     return typeof value === 'string' && /^[a-fA-F0-9]{24}$/.test(value);
 }
 
+// Parses a string into a valid ObjectId or returns null.
 function parseId(value) {
     return isValidObjectId(value) ? value : null;
 }
 
+// Defines safe fields to return in user responses.
 function safeUserSelect() {
     return {
         id: true,
@@ -25,6 +29,7 @@ function safeUserSelect() {
     };
 }
 
+// Signs a JWT token for the authenticated user.
 function signUserToken(user) {
     return jwt.sign(
         { id: user.id, email: user.email, role: user.role },
@@ -33,6 +38,7 @@ function signUserToken(user) {
     );
 }
 
+// Logs and formats unexpected user route errors.
 function respondServerError(res, err) {
     console.error('[users] Route error:', err);
     return res.status(500).json({ error: 'Internal server error' });

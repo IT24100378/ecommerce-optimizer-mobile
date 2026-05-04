@@ -1,31 +1,38 @@
+// Forecast routes: demand predictions and forecast management.
 const express = require('express');
 const router = express.Router();
 const { getSalesPrediction } = require('../services/aiService');
 const { authenticateJwt, requireRole } = require('../middleware/auth');
 
+// Validates Mongo ObjectId strings.
 function isValidObjectId(value) {
     return typeof value === 'string' && /^[a-fA-F0-9]{24}$/.test(value);
 }
 
+// Logs and formats unexpected forecast errors.
 function serverError(res, err) {
     console.error('[forecasts] Route error:', err);
     return res.status(500).json({ error: 'Internal server error' });
 }
 
+// Normalizes a Date to the start of the UTC day.
 function startOfUtcDay(date) {
     return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 }
 
+// Adds days to a UTC-normalized date.
 function addUtcDays(date, days) {
     const next = new Date(date);
     next.setUTCDate(next.getUTCDate() + days);
     return startOfUtcDay(next);
 }
 
+// Builds a YYYY-MM-DD key for UTC day buckets.
 function dateKey(date) {
     return startOfUtcDay(date).toISOString().slice(0, 10);
 }
 
+// Parses a YYYY-MM-DD string into a UTC date.
 function parseIsoDate(value) {
     if (!value || typeof value !== 'string') return null;
     const parsed = new Date(`${value}T00:00:00.000Z`);
@@ -33,6 +40,7 @@ function parseIsoDate(value) {
     return startOfUtcDay(parsed);
 }
 
+// Maps product data to include category name safely.
 function toProductWithCategoryName(product) {
     if (!product) {
         return {
@@ -49,6 +57,7 @@ function toProductWithCategoryName(product) {
     };
 }
 
+// Loads forecasts and resolves related product info.
 async function listForecastsWithResolvedProducts(prisma, where, orderBy) {
     const forecasts = await prisma.demandForecast.findMany({
         where,

@@ -1,19 +1,23 @@
+// Inventory routes: manage stock levels and inventory records.
 const express = require('express');
 const router = express.Router();
 const { authenticateJwt, requireRole } = require('../middleware/auth');
 const { syncProductStockMirror } = require('../services/inventoryService');
 const { parseProductIdentifier, findProductByIdentifier } = require('../services/productCodeService');
 
+// Validates Mongo ObjectId strings.
 function isValidObjectId(value) {
     return typeof value === 'string' && /^[a-fA-F0-9]{24}$/.test(value);
 }
 
+// Parses non-negative integer input or returns null when invalid.
 function parseNonNegativeInt(value) {
     if (value === undefined || value === null || value === '') return null;
     const parsed = Number.parseInt(value, 10);
     return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
 }
 
+// Logs and formats unexpected inventory errors.
 function serverError(res, err) {
     console.error('[inventory] Route error:', err);
     return res.status(500).json({ error: 'Internal server error' });

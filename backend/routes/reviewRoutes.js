@@ -1,18 +1,21 @@
+// Review routes: customer reviews and admin moderation.
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const { authenticateJwt, requireRole } = require('../middleware/auth');
 const { parseProductIdentifier, findProductByIdentifier } = require('../services/productCodeService');
-
+// Logs and formats review route errors.
 function serverError(res, err) {
     console.error('[reviews] Route error:', err);
     return res.status(500).json({ error: 'Internal server error' });
 }
 
+// Validates Mongo ObjectId strings.
 function isValidObjectId(value) {
     return typeof value === 'string' && /^[a-fA-F0-9]{24}$/.test(value);
 }
 
+// Resolves product identifiers to internal product IDs.
 async function resolveProductId(prisma, rawProductIdentifier) {
     const parsed = parseProductIdentifier(rawProductIdentifier);
     if (parsed.kind === 'invalid') {

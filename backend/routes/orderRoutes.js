@@ -1,3 +1,4 @@
+// Order routes: create, fetch, and manage order lifecycle.
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
@@ -7,19 +8,23 @@ const { adjustStock, ensureInventoryRecord } = require('../services/inventorySer
 
 const RESTOCK_STATUSES = new Set(['CANCELLED', 'RETURNED']);
 
+// Validates Mongo ObjectId strings.
 function isValidObjectId(value) {
     return typeof value === 'string' && /^[a-fA-F0-9]{24}$/.test(value);
 }
 
+// Parses a string into a valid ObjectId or returns null.
 function parseId(value) {
     return isValidObjectId(value) ? value : null;
 }
 
+// Logs and formats unexpected order errors.
 function serverError(res, err) {
     console.error('[orders] Route error:', err);
     return res.status(500).json({ error: 'Internal server error' });
 }
 
+// Validates and normalizes raw order items from the request.
 function parseOrderItems(items) {
     if (!items || !Array.isArray(items) || items.length === 0) {
         return null;
@@ -39,6 +44,7 @@ function parseOrderItems(items) {
     return hasInvalid ? null : parsedItems;
 }
 
+// Aggregates order items into a productId => quantity map.
 function buildProductQuantityMap(parsedItems) {
     return parsedItems.reduce((productQuantities, item) => {
         productQuantities.set(item.productId, (productQuantities.get(item.productId) || 0) + item.quantity);

@@ -1,6 +1,8 @@
+// Script to ensure a default admin account exists in the database.
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
+// Creates or updates the admin user using environment defaults.
 async function bootstrapAdmin() {
   const prisma = new PrismaClient();
   try {
@@ -33,4 +35,3 @@ bootstrapAdmin().catch((err) => {
   console.error('Failed to bootstrap admin account:', err);
   process.exit(1);
 });
-

@@ -1,14 +1,18 @@
+// Product code service: parsing and sequencing for product identifiers.
 const PRODUCT_CODE_COUNTER_KEY = 'product_code';
 
+// Parses a numeric product code from input.
 function parseProductCode(value) {
     const parsed = Number.parseInt(String(value ?? ''), 10);
     return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
+// Validates Mongo ObjectId strings.
 function isValidObjectId(value) {
     return typeof value === 'string' && /^[a-fA-F0-9]{24}$/.test(value);
 }
 
+// Parses an identifier string into ObjectId or product code form.
 function parseProductIdentifier(value) {
     const asString = String(value ?? '').trim();
     if (!asString) return { kind: 'invalid' };
@@ -18,6 +22,7 @@ function parseProductIdentifier(value) {
     return { kind: 'invalid' };
 }
 
+// Increments and returns the next product code sequence.
 async function getNextProductCode(prisma) {
     const counter = await prisma.counter.upsert({
         where: { key: PRODUCT_CODE_COUNTER_KEY },
@@ -28,6 +33,7 @@ async function getNextProductCode(prisma) {
     return counter.seq;
 }
 
+// Finds a product by ObjectId or numeric product code.
 async function findProductByIdentifier(prisma, rawIdentifier, extraQuery = {}) {
     const parsed = parseProductIdentifier(rawIdentifier);
     if (parsed.kind === 'invalid') return null;
@@ -45,6 +51,7 @@ async function findProductByIdentifier(prisma, rawIdentifier, extraQuery = {}) {
     });
 }
 
+// Backfills missing product codes in batches.
 async function backfillMissingProductCodes(prisma) {
     const missingCount = await prisma.product.count({
         where: { productCode: null },
