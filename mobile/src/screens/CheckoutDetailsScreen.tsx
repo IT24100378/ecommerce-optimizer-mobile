@@ -1,3 +1,4 @@
+// Checkout details screen for customer information and order summary.
 import React, { useMemo, useState } from 'react';
 import {
 	Pressable,
@@ -10,11 +11,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useStorefrontStore } from '../storefront/store';
 
+// Formats price values for display.
 function formatPrice(value: number) {
 	if (!Number.isFinite(value)) return '$0.00';
 	return `$${value.toFixed(2)}`;
 }
 
+// Collects customer info before payment.
 export default function CheckoutDetailsScreen() {
 	const navigation = useNavigation();
 	const { cartItems, promoResult, user } = useStorefrontStore();
@@ -35,6 +38,7 @@ export default function CheckoutDetailsScreen() {
 
 	const total = promoResult?.discountedPrice ?? subtotal;
 
+	// Validates input and moves to payment step.
 	const handleContinue = () => {
 		if (!form.name.trim() || !form.email.trim() || !form.address.trim()) {
 			setError('Name, email, and address are required.');
@@ -249,4 +253,3 @@ const styles = StyleSheet.create({
 		fontSize: 15,
 	},
 });
-

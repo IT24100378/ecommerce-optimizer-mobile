@@ -1,3 +1,4 @@
+// Admin inventory management screen.
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
 	ActivityIndicator,
@@ -21,6 +22,7 @@ type InventoryDraft = {
 
 const emptyDraft: InventoryDraft = { productId: '', stockLevel: '0', lowStockThreshold: '10' };
 
+// Admin interface for inventory records.
 export default function AdminInventoryScreen() {
 	const token = useStorefrontStore((state) => state.user?.token);
 	const [rows, setRows] = useState<any[]>([]);
@@ -33,6 +35,7 @@ export default function AdminInventoryScreen() {
 
 	const headers = useMemo(() => (token ? { Authorization: `Bearer ${token}` } : undefined), [token]);
 
+	// Loads inventory rows.
 	const fetchRows = useCallback(async () => {
 		if (!headers) return;
 		setLoading(true);
@@ -50,6 +53,7 @@ export default function AdminInventoryScreen() {
 		fetchRows();
 	}, [fetchRows]);
 
+	// Creates a new inventory record.
 	const createRecord = async () => {
 		if (!headers) return;
 		const payload = {
@@ -71,12 +75,14 @@ export default function AdminInventoryScreen() {
 		}
 	};
 
+	// Initializes editing state for a row.
 	const startEdit = (row: any) => {
 		setEditingId(String(row.id));
 		setEditStock(String(row.stockLevel ?? 0));
 		setEditThreshold(String(row.lowStockThreshold ?? 10));
 	};
 
+	// Saves the edited inventory values.
 	const saveEdit = async () => {
 		if (!headers || !editingId) return;
 		const payload = {
@@ -96,6 +102,7 @@ export default function AdminInventoryScreen() {
 		}
 	};
 
+	// Confirms and deletes an inventory record.
 	const removeRecord = (id: string) => {
 		if (!headers) return;
 		Alert.alert('Delete Record', 'Delete this inventory record?', [

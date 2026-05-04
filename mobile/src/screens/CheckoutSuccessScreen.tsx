@@ -1,14 +1,17 @@
+// Confirmation screen shown after successful checkout.
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useStorefrontStore } from '../storefront/store';
 
+// Formats price values for display.
 function formatPrice(value: number) {
 	if (!Number.isFinite(value)) return '$0.00';
 	return `$${value.toFixed(2)}`;
 }
 
+// Displays the checkout success summary and navigation.
 export default function CheckoutSuccessScreen() {
 	const navigation = useNavigation();
 	const { lastOrder } = useStorefrontStore();
@@ -113,4 +116,3 @@ const styles = StyleSheet.create({
 		fontSize: 15,
 	},
 });
-

@@ -8,6 +8,8 @@ import ReactTestRenderer from 'react-test-renderer';
 import axios from 'axios';
 import App from '../App';
 
+// App smoke test with mocked navigation and API calls.
+
 jest.mock('react-native-safe-area-context', () => ({
   SafeAreaProvider: ({ children }) => children,
   SafeAreaView: ({ children }) => children,
@@ -42,6 +44,7 @@ jest.mock('react-native-screens', () => ({
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
+// Ensures the root app renders with mocked data.
 test('renders correctly', async () => {
   mockedAxios.get.mockImplementation((url) => {
     if (String(url).includes('/api/products')) {

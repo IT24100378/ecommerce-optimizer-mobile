@@ -1,3 +1,4 @@
+// Admin product management screen for CRUD operations.
 import React, { useCallback, useEffect, useState } from 'react';
 import {
 	ActivityIndicator,
@@ -35,6 +36,7 @@ const emptyForm: ProductForm = {
 	description: '',
 };
 
+// Admin interface for managing products.
 export default function AdminProductDashboardScreen() {
 	const { products, loading, fetchCatalog, createProduct, updateProduct, deleteProduct } = useStorefrontStore();
 	const [categories, setCategories] = useState<string[]>([]);
@@ -43,6 +45,7 @@ export default function AdminProductDashboardScreen() {
 	const [isEditing, setIsEditing] = useState(false);
 	const [form, setForm] = useState<ProductForm>(emptyForm);
 
+	// Loads available categories for product assignment.
 	const fetchCategories = useCallback(async () => {
 		try {
 			const { data } = await axios.get(`${API_BASE_URL}/api/categories`);
@@ -57,12 +60,14 @@ export default function AdminProductDashboardScreen() {
 		fetchCategories();
 	}, [fetchCatalog, fetchCategories]);
 
+	// Opens the create product modal.
 	const openCreate = () => {
 		setIsEditing(false);
 		setForm(emptyForm);
 		setFormModal(true);
 	};
 
+	// Opens the edit modal with the selected product.
 	const openEdit = (product: Product) => {
 		setIsEditing(true);
 		setForm({
@@ -77,6 +82,7 @@ export default function AdminProductDashboardScreen() {
 		setFormModal(true);
 	};
 
+	// Validates and submits create/update actions.
 	const submitProduct = async () => {
 		if (!form.name.trim() || !form.sku.trim()) {
 			Alert.alert('Product', 'Name and SKU are required.');
@@ -114,6 +120,7 @@ export default function AdminProductDashboardScreen() {
 		await fetchCategories();
 	};
 
+	// Confirms and executes product deletion.
 	const confirmDelete = (id: string) => {
 		Alert.alert('Delete Product', 'Delete this product?', [
 			{ text: 'Cancel', style: 'cancel' },

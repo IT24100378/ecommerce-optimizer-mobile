@@ -1,3 +1,4 @@
+// Admin category management screen.
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
 	ActivityIndicator,
@@ -19,6 +20,7 @@ type CategoryRow = {
 	createdAt?: string;
 };
 
+// Admin interface for managing categories.
 export default function AdminCategoriesScreen() {
 	const token = useStorefrontStore((state) => state.user?.token);
 	const products = useStorefrontStore((state) => state.products);
@@ -41,6 +43,7 @@ export default function AdminCategoriesScreen() {
 		}, {});
 	}, [products]);
 
+	// Loads admin categories and refreshes catalog data.
 	const loadData = useCallback(async () => {
 		if (!token) return;
 		setLoading(true);
@@ -61,6 +64,7 @@ export default function AdminCategoriesScreen() {
 		loadData();
 	}, [loadData]);
 
+	// Creates a new category.
 	const handleCreate = async () => {
 		const name = newCategoryName.trim();
 		if (!name) {
@@ -79,6 +83,7 @@ export default function AdminCategoriesScreen() {
 		}
 	};
 
+	// Updates an existing category name.
 	const handleUpdate = async (category: CategoryRow) => {
 		const name = editingName.trim();
 		if (!name) {
@@ -98,6 +103,7 @@ export default function AdminCategoriesScreen() {
 		}
 	};
 
+	// Confirms and deletes a category.
 	const handleDelete = (category: CategoryRow) => {
 		Alert.alert('Delete Category', `Delete "${category.name}"?`, [
 			{ text: 'Cancel', style: 'cancel' },

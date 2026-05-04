@@ -1,3 +1,4 @@
+// Profile screen for auth, profile updates, and password changes.
 import React, { useMemo, useState } from 'react';
 import {
 	ActivityIndicator,
@@ -14,6 +15,7 @@ import { API_BASE_URL, useStorefrontStore } from '../storefront/store';
 type AuthMode = 'signin' | 'signup';
 type PanelMode = 'profile' | 'password';
 
+// Profile and authentication screen.
 export default function ProfileScreen() {
 	const { user, setUser, signOut } = useStorefrontStore();
 	const [mode, setMode] = useState<AuthMode>('signin');
@@ -40,6 +42,7 @@ export default function ProfileScreen() {
 		user?.token ? { Authorization: `Bearer ${user.token}` } : undefined
 	), [user?.token]);
 
+	// Signs in or registers the user based on the active mode.
 	const handleAuthSubmit = async () => {
 		setLoading(true);
 		setError('');
@@ -79,7 +82,7 @@ export default function ProfileScreen() {
 			setLoading(false);
 		}
 	};
-
+	// Updates profile fields for the signed-in user.
 	const saveProfile = async () => {
 		if (!user?.id || !authHeaders) return;
 		setLoading(true);
@@ -101,6 +104,7 @@ export default function ProfileScreen() {
 		}
 	};
 
+	// Changes the current user's password.
 	const changePassword = async () => {
 		if (!user?.id || !authHeaders) return;
 		setLoading(true);

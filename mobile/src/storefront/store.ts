@@ -1,3 +1,4 @@
+// Storefront state and API actions for the mobile app.
 import axios from 'axios';
 import { create } from 'zustand';
 import { API_BASE_URL } from '../config/api';
@@ -112,14 +113,17 @@ export type StorefrontState = {
 	clearCart: () => void;
 };
 
+// Builds a stable product ID fallback for cart usage.
 export function getProductId(product: Product): string {
 	return String(product.id ?? product._id ?? product.sku ?? product.name ?? Math.random());
 }
 
+// Computes available stock with safe defaults.
 function getAvailableStock(product: Partial<Product>) {
 	return Math.max(0, Number(product.availableStock ?? product.stockQuantity ?? 0));
 }
 
+// Maps cart items into order payloads for checkout.
 function mapCartItemsForCheckout(items: CartItem[]) {
 	return items.map((item) => ({
 		productId: item.productId,
@@ -128,6 +132,7 @@ function mapCartItemsForCheckout(items: CartItem[]) {
 	}));
 }
 
+// Builds auth headers for protected API calls.
 function authHeaders(token?: string) {
 	return token ? { Authorization: `Bearer ${token}` } : {};
 }
@@ -156,6 +161,7 @@ export const useStorefrontStore = create<StorefrontState>((set, get) => ({
 	ordersLoading: false,
 	ordersError: '',
 
+	// Loads products, categories, and active promotions.
 	fetchCatalog: async () => {
 		set({ loading: true, error: '' });
 		try {
@@ -181,6 +187,7 @@ export const useStorefrontStore = create<StorefrontState>((set, get) => ({
 		}
 	},
 
+	// Creates a new product (admin/vendor).
 	createProduct: async (productData) => {
 		try {
 			await axios.post(`${API_BASE_URL}/api/products`, productData, {
@@ -193,6 +200,7 @@ export const useStorefrontStore = create<StorefrontState>((set, get) => ({
 		}
 	},
 
+	// Updates an existing product.
 	updateProduct: async (id, productData) => {
 		try {
 			await axios.put(`${API_BASE_URL}/api/products/${id}`, productData, {
@@ -205,6 +213,7 @@ export const useStorefrontStore = create<StorefrontState>((set, get) => ({
 		}
 	},
 
+	// Soft-deletes a product by id.
 	deleteProduct: async (id) => {
 		try {
 			await axios.delete(`${API_BASE_URL}/api/products/${id}`, {
@@ -219,6 +228,7 @@ export const useStorefrontStore = create<StorefrontState>((set, get) => ({
 		}
 	},
 
+	// Persists the current user and configures auth headers.
 	setUser: (user) => {
 		if (user?.token) {
 			axios.defaults.headers.common.Authorization = `Bearer ${user.token}`;
@@ -231,16 +241,22 @@ export const useStorefrontStore = create<StorefrontState>((set, get) => ({
 		});
 	},
 
+	// Clears user session and resets user-scoped state.
 	signOut: () => {
 		delete axios.defaults.headers.common.Authorization;
 		set({ user: null, isAdmin: false, orders: [], ordersError: '' });
 	},
 
+	// Updates the search term for product filtering.
 	setSearchTerm: (value) => set({ searchTerm: value }),
+	// Updates the active category filter.
 	setActiveCategory: (value) => set({ activeCategory: value }),
+	// Updates the sort mode for product lists.
 	setSortBy: (value) => set({ sortBy: value }),
+	// Updates the max price filter.
 	setMaxPrice: (value) => set({ maxPrice: value }),
 
+	// Applies a promo code to the current cart.
 	applyPromo: async (code) => {
 		const trimmed = code.trim();
 		const items = mapCartItemsForCheckout(get().cartItems);
@@ -268,8 +284,10 @@ export const useStorefrontStore = create<StorefrontState>((set, get) => ({
 		}
 	},
 
+	// Clears any applied promotion state.
 	clearPromo: () => set({ promoCode: '', promoResult: null, promoError: '' }),
 
+	// Places an order as a signed-in or guest customer.
 	placeOrder: async (customer) => {
 		const state = get();
 		const items = mapCartItemsForCheckout(state.cartItems);
@@ -308,6 +326,7 @@ export const useStorefrontStore = create<StorefrontState>((set, get) => ({
 		}
 	},
 
+	// Loads order history for the signed-in user.
 	fetchOrders: async () => {
 		const token = get().user?.token;
 		if (!token) {
@@ -325,6 +344,7 @@ export const useStorefrontStore = create<StorefrontState>((set, get) => ({
 		}
 	},
 
+	// Adds a product to the cart with stock checks.
 	addToCart: (product) => {
 		set((state) => {
 			const id = getProductId(product);
@@ -348,6 +368,7 @@ export const useStorefrontStore = create<StorefrontState>((set, get) => ({
 		});
 	},
 
+	// Updates the quantity of a cart item with stock bounds.
 	updateQty: (id, qty) => {
 		set((state) => {
 			const existing = state.cartItems.find((item) => item.id === id);
@@ -363,9 +384,11 @@ export const useStorefrontStore = create<StorefrontState>((set, get) => ({
 		});
 	},
 
+	// Removes an item from the cart.
 	removeFromCart: (id) => {
 		set((state) => ({ cartItems: state.cartItems.filter((item) => item.id !== id) }));
 	},
 
+	// Clears all items from the cart.
 	clearCart: () => set({ cartItems: [] }),
 }));

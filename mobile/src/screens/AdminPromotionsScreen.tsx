@@ -1,3 +1,4 @@
+// Admin promotions management screen with preview and testing tools.
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
 	ActivityIndicator,
@@ -31,12 +32,14 @@ function isoDate(date: Date) {
 	return date.toISOString().slice(0, 10);
 }
 
+// Returns a future date string offset by days.
 function futureIsoDate(days: number) {
 	const d = new Date();
 	d.setDate(d.getDate() + days);
 	return isoDate(d);
 }
 
+// Builds the default promo form state.
 function defaultForm(): PromoForm {
 	return {
 		campaignName: '',
@@ -51,6 +54,7 @@ function defaultForm(): PromoForm {
 	};
 }
 
+// Admin interface for creating and updating promotions.
 export default function AdminPromotionsScreen() {
 	const token = useStorefrontStore((state) => state.user?.token);
 	const [rows, setRows] = useState<any[]>([]);
@@ -70,6 +74,7 @@ export default function AdminPromotionsScreen() {
 
 	const headers = useMemo(() => (token ? { Authorization: `Bearer ${token}` } : undefined), [token]);
 
+	// Loads promotions, products, and categories.
 	const fetchRows = useCallback(async () => {
 		if (!headers) return;
 		setLoading(true);
@@ -93,6 +98,7 @@ export default function AdminPromotionsScreen() {
 		fetchRows();
 	}, [fetchRows]);
 
+	// Opens the create promotion form.
 	const openCreate = () => {
 		setEditingId('');
 		setForm(defaultForm());
@@ -100,6 +106,7 @@ export default function AdminPromotionsScreen() {
 		setFormOpen(true);
 	};
 
+	// Opens the edit form with existing promotion data.
 	const openEdit = (promo: any) => {
 		setEditingId(String(promo.id));
 		setForm({
@@ -117,6 +124,7 @@ export default function AdminPromotionsScreen() {
 		setFormOpen(true);
 	};
 
+	// Validates and builds the promotion payload.
 	const buildPayload = () => {
 		const discount = Number(form.discountPercentage);
 		if (!form.campaignName.trim() || !Number.isFinite(discount) || discount <= 0) {
@@ -148,6 +156,7 @@ export default function AdminPromotionsScreen() {
 		};
 	};
 
+	// Calls the preview endpoint to validate overlaps.
 	const previewPromotion = async () => {
 		if (!headers) return;
 		try {
@@ -162,6 +171,7 @@ export default function AdminPromotionsScreen() {
 		}
 	};
 
+	// Creates or updates a promotion.
 	const savePromotion = async () => {
 		if (!headers) return;
 		setSaving(true);
@@ -184,6 +194,7 @@ export default function AdminPromotionsScreen() {
 		}
 	};
 
+	// Confirms and deletes a promotion.
 	const deletePromotion = (id: string) => {
 		if (!headers) return;
 		Alert.alert('Delete Promotion', 'Delete this promotion?', [
@@ -203,6 +214,7 @@ export default function AdminPromotionsScreen() {
 		]);
 	};
 
+	// Runs a promo code test against a sample amount.
 	const runPromoTest = async () => {
 		const promoCode = testCode.trim().toUpperCase();
 		const originalPrice = Number(testAmount);

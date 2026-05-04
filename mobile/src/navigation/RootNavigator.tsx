@@ -1,3 +1,4 @@
+// Root navigation stacks for storefront, cart, orders, admin, and profile.
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -26,6 +27,7 @@ const CartStack = createNativeStackNavigator();
 const OrdersStack = createNativeStackNavigator();
 const AdminStack = createNativeStackNavigator();
 
+// Storefront stack for product browsing and details.
 function StoreStackScreen() {
 	return (
 		<StoreStack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
@@ -35,6 +37,7 @@ function StoreStackScreen() {
 	);
 }
 
+// Cart stack for checkout flow.
 function CartStackScreen() {
 	return (
 		<CartStack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
@@ -46,6 +49,7 @@ function CartStackScreen() {
 	);
 }
 
+// Orders stack for purchase history.
 function OrdersStackScreen() {
 	return (
 		<OrdersStack.Navigator screenOptions={{ headerShown: false }}>
@@ -54,6 +58,7 @@ function OrdersStackScreen() {
 	);
 }
 
+// Admin stack for back-office screens.
 function AdminStackScreen() {
 	return (
 		<AdminStack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
@@ -70,6 +75,7 @@ function AdminStackScreen() {
 	);
 }
 
+// Root tab navigator that switches admin vs customer tabs.
 export default function RootNavigator() {
 	const isAdmin = useStorefrontStore((state) => state.isAdmin);
 
@@ -93,4 +99,3 @@ export default function RootNavigator() {
 </Tab.Navigator>
 	);
 }
-

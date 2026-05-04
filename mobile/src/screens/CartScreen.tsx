@@ -1,3 +1,4 @@
+// Cart screen with promo application and checkout summary.
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import {
 	ActivityIndicator,
@@ -15,11 +16,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { CartItem, useStorefrontStore } from '../storefront/store';
 
+// Formats price values for display.
 function formatPrice(value: number) {
 	if (!Number.isFinite(value)) return '$0.00';
 	return `$${value.toFixed(2)}`;
 }
 
+// Cart screen for reviewing items and applying promos.
 export default function CartScreen() {
 	const navigation = useNavigation();
 	const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -54,15 +57,18 @@ export default function CartScreen() {
 
 	const total = promoResult?.discountedPrice ?? subtotal;
 
+	// Applies the entered promo code.
 	const handleApplyPromo = () => {
 		applyPromo(promoInput);
 	};
 
+	// Navigates to the checkout details flow.
 	const handleCheckout = () => {
 		if (!cartItems.length) return;
 		navigation.navigate('CheckoutDetails' as never);
 	};
 
+	// Increases quantity with stock checks.
 	const increaseQty = (item: CartItem) => {
 		const availableStock = Number(item.availableStock ?? item.stockQuantity ?? 0);
 		if (item.qty >= availableStock) {
@@ -72,6 +78,7 @@ export default function CartScreen() {
 		updateQty(item.id, item.qty + 1);
 	};
 
+	// Renders individual cart rows.
 	const renderItem = ({ item }: { item: CartItem }) => (
 		<View style={styles.cartItem}>
 			{item.imageUrl ? (

@@ -1,3 +1,4 @@
+// Product detail screen with reviews and add-to-cart actions.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
 	ActivityIndicator,
@@ -15,11 +16,13 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import axios from 'axios';
 import { API_BASE_URL, getProductId, Product, useStorefrontStore } from '../storefront/store';
 
+// Formats price values for display.
 function formatPrice(value: number) {
 	if (!Number.isFinite(value)) return '$0.00';
 	return `$${value.toFixed(2)}`;
 }
 
+// Star rating row for review input and display.
 function StarRow({ value, onChange, readonly = false }: { value: number; onChange?: (v: number) => void; readonly?: boolean }) {
 	return (
 		<View style={styles.starRow}>
@@ -32,6 +35,7 @@ function StarRow({ value, onChange, readonly = false }: { value: number; onChang
 	);
 }
 
+// Product detail screen for a single item.
 export default function ProductDetailScreen() {
 	const navigation = useNavigation();
 	const route = useRoute();
@@ -103,6 +107,7 @@ export default function ProductDetailScreen() {
 		};
 	}, [routeParams?.product, routeParams?.productId]);
 
+	// Loads reviews for the current product.
 	const fetchReviews = useCallback(async () => {
 		if (!productId) {
 			setReviews([]);
@@ -120,6 +125,7 @@ export default function ProductDetailScreen() {
 		}
 	}, [productId]);
 
+	// Checks if the signed-in user can review the product.
 	const fetchCanReview = useCallback(async () => {
 		if (!headers || !productId) {
 			setCanReviewData(null);
@@ -167,6 +173,7 @@ export default function ProductDetailScreen() {
 		);
 	}
 
+	// Submits a new review or updates an existing one.
 	const submitReview = async () => {
 		if (!headers) {
 			Alert.alert('Reviews', 'Please sign in to write a review.');
@@ -204,6 +211,7 @@ export default function ProductDetailScreen() {
 		}
 	};
 
+	// Deletes the signed-in user's existing review.
 	const deleteReview = async () => {
 		if (!headers || !canReviewData?.existingReview?.id) return;
 		try {

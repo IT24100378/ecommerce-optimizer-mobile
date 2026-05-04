@@ -1,3 +1,4 @@
+// Orders screen showing recent purchase history.
 import React, { useEffect } from 'react';
 import {
 	ActivityIndicator,
@@ -9,11 +10,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Order, useStorefrontStore } from '../storefront/store';
 
+// Formats price values for display.
 function formatPrice(value: number) {
 	if (!Number.isFinite(value)) return '$0.00';
 	return `$${value.toFixed(2)}`;
 }
 
+// Lists orders for the signed-in user.
 export default function OrdersScreen() {
 	const { orders, ordersLoading, ordersError, fetchOrders } = useStorefrontStore();
 
@@ -21,6 +24,7 @@ export default function OrdersScreen() {
 		fetchOrders();
 	}, [fetchOrders]);
 
+	// Renders each order summary card.
 	const renderItem = ({ item }: { item: Order }) => (
 		<View style={styles.orderCard}>
 			<View style={styles.orderHeader}>
@@ -164,4 +168,3 @@ const styles = StyleSheet.create({
 		fontSize: 14,
 	},
 });
-

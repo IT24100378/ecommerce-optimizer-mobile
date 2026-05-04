@@ -1,3 +1,4 @@
+// Admin demand forecast screen using AI predictions.
 import React, { useEffect, useMemo, useState } from 'react';
 import {
 	ActivityIndicator,
@@ -12,16 +13,19 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import { API_BASE_URL, useStorefrontStore } from '../storefront/store';
 
+// Formats a Date into YYYY-MM-DD.
 function toDateString(date: Date) {
 	return date.toISOString().slice(0, 10);
 }
 
+// Adds days to a date string and returns YYYY-MM-DD.
 function addDays(dateString: string, days: number) {
 	const d = new Date(`${dateString}T00:00:00.000Z`);
 	d.setUTCDate(d.getUTCDate() + days);
 	return toDateString(d);
 }
 
+// Admin interface for forecasting demand.
 export default function AdminForecastScreen() {
 	const token = useStorefrontStore((state) => state.user?.token);
 	const [products, setProducts] = useState<any[]>([]);
@@ -48,12 +52,14 @@ export default function AdminForecastScreen() {
 		})();
 	}, []);
 
+	// Keeps end date in sync with the day count.
 	const syncEndDateWithDays = (nextDays: string) => {
 		setDays(nextDays);
 		const parsedDays = Math.max(1, Number(nextDays || 1));
 		setEndDate(addDays(startDate, parsedDays - 1));
 	};
 
+	// Calls the AI forecast endpoint for the selected product.
 	const runForecast = async () => {
 		if (!headers || !selectedProductId) return;
 		const parsedDays = Number(days);

@@ -1,3 +1,4 @@
+// Admin users management screen with history view.
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
 	ActivityIndicator,
@@ -32,6 +33,7 @@ const emptyForm: UserForm = {
 	preferences: '',
 };
 
+// Admin interface for managing users.
 export default function AdminUsersScreen() {
 	const token = useStorefrontStore((state) => state.user?.token);
 	const [rows, setRows] = useState<any[]>([]);
@@ -44,6 +46,7 @@ export default function AdminUsersScreen() {
 
 	const headers = useMemo(() => (token ? { Authorization: `Bearer ${token}` } : undefined), [token]);
 
+	// Loads user rows.
 	const fetchRows = useCallback(async () => {
 		if (!headers) return;
 		setLoading(true);
@@ -61,12 +64,14 @@ export default function AdminUsersScreen() {
 		fetchRows();
 	}, [fetchRows]);
 
+	// Opens the create user form.
 	const openCreate = () => {
 		setEditingId('');
 		setForm(emptyForm);
 		setFormOpen(true);
 	};
 
+	// Opens the edit form for a user.
 	const openEdit = (user: any) => {
 		setEditingId(String(user.id));
 		setForm({
@@ -80,6 +85,7 @@ export default function AdminUsersScreen() {
 		setFormOpen(true);
 	};
 
+	// Creates or updates a user.
 	const saveUser = async () => {
 		if (!headers) return;
 		if (!form.name.trim() || !form.email.trim()) {
@@ -120,6 +126,7 @@ export default function AdminUsersScreen() {
 		}
 	};
 
+	// Confirms and deletes a user account.
 	const deleteUser = (id: string) => {
 		if (!headers) return;
 		Alert.alert('Delete User', 'Delete this user account?', [
@@ -139,6 +146,7 @@ export default function AdminUsersScreen() {
 		]);
 	};
 
+	// Loads order history for the selected user.
 	const loadHistory = async (id: string) => {
 		if (!headers) return;
 		setHistoryLoading(true);

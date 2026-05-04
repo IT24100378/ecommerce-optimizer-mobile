@@ -1,3 +1,4 @@
+// React Native entrypoint for app registration.
 /**
  * @format
  */

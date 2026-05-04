@@ -1,3 +1,4 @@
+// Admin dashboard with counts and navigation shortcuts.
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -5,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import { API_BASE_URL, useStorefrontStore } from '../storefront/store';
 
+// Admin entry screen for management modules.
 export default function AdminDashboardScreen() {
 	const navigation = useNavigation<any>();
 	const token = useStorefrontStore((state) => state.user?.token);
@@ -22,6 +24,7 @@ export default function AdminDashboardScreen() {
 		{ key: 'reviews', label: 'Reviews', route: 'AdminReviews' },
 	];
 
+	// Loads summary counts for each admin module.
 	const fetchStats = useCallback(async () => {
 		if (!token) return;
 		setLoading(true);

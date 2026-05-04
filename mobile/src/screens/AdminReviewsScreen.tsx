@@ -1,3 +1,4 @@
+// Admin reviews moderation screen.
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
 	ActivityIndicator,
@@ -13,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import { API_BASE_URL, useStorefrontStore } from '../storefront/store';
 
+// Admin interface for moderating reviews.
 export default function AdminReviewsScreen() {
 	const token = useStorefrontStore((state) => state.user?.token);
 	const [rows, setRows] = useState<any[]>([]);
@@ -21,6 +23,7 @@ export default function AdminReviewsScreen() {
 
 	const headers = useMemo(() => (token ? { Authorization: `Bearer ${token}` } : undefined), [token]);
 
+	// Loads reviews with optional product filtering.
 	const fetchRows = useCallback(async () => {
 		if (!headers) return;
 		setLoading(true);
@@ -43,6 +46,7 @@ export default function AdminReviewsScreen() {
 		fetchRows();
 	}, [fetchRows]);
 
+	// Toggles the hidden status of a review.
 	const toggleHidden = async (review: any) => {
 		if (!headers) return;
 		try {

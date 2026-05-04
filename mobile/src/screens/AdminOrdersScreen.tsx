@@ -1,3 +1,4 @@
+// Admin order management screen for status updates and creation.
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
 	ActivityIndicator,
@@ -22,6 +23,7 @@ type DraftItem = {
 	price: string;
 };
 
+// Admin interface for managing orders.
 export default function AdminOrdersScreen() {
 	const token = useStorefrontStore((state) => state.user?.token);
 	const [orders, setOrders] = useState<any[]>([]);
@@ -33,6 +35,7 @@ export default function AdminOrdersScreen() {
 
 	const headers = useMemo(() => (token ? { Authorization: `Bearer ${token}` } : undefined), [token]);
 
+	// Loads orders for admin review.
 	const fetchOrders = useCallback(async () => {
 		if (!headers) return;
 		setLoading(true);
@@ -50,6 +53,7 @@ export default function AdminOrdersScreen() {
 		fetchOrders();
 	}, [fetchOrders]);
 
+	// Updates the status of an order.
 	const updateStatus = async (orderId: string, nextStatus: string) => {
 		if (!headers) return;
 		setBusyId(orderId);
@@ -63,6 +67,7 @@ export default function AdminOrdersScreen() {
 		}
 	};
 
+	// Confirms and deletes an order permanently.
 	const deleteOrder = (orderId: string) => {
 		if (!headers) return;
 		Alert.alert('Delete Order', 'Delete this order permanently?', [
@@ -85,12 +90,16 @@ export default function AdminOrdersScreen() {
 		]);
 	};
 
+	// Adds a new blank item row to the draft order.
 	const addDraftItem = () => setDraftItems((prev) => [...prev, { productId: '', quantity: '1', price: '' }]);
+	// Removes a draft item row by index.
 	const removeDraftItem = (index: number) => setDraftItems((prev) => prev.filter((_, idx) => idx !== index));
+	// Updates a field within a draft item row.
 	const updateDraftItem = (index: number, field: keyof DraftItem, value: string) => {
 		setDraftItems((prev) => prev.map((item, idx) => (idx === index ? { ...item, [field]: value } : item)));
 	};
 
+	// Validates and submits a new order.
 	const createOrder = async () => {
 		if (!headers) return;
 		const parsedItems = draftItems.map((item) => ({

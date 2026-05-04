@@ -1,3 +1,4 @@
+// Mobile app entry: providers and navigation setup.
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -7,6 +8,7 @@ import { FEATURE_FLAGS } from './src/config/featureFlags';
 
 enableScreens();
 
+// Deep link configuration for storefront, checkout, orders, and admin routes.
 const linking = {
 	prefixes: ['ecomoptimizer://', 'https://ecomoptimizer.app'],
 	config: {
@@ -42,6 +44,7 @@ const linking = {
 	},
 };
 
+// Root app component with safe-area and navigation containers.
 export default function App() {
     return (
         <SafeAreaProvider>

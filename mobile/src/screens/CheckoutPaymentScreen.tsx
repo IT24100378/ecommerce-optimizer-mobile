@@ -1,3 +1,4 @@
+// Checkout payment screen for card entry and order placement.
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import {
 	ActivityIndicator,
@@ -12,20 +13,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useStorefrontStore } from '../storefront/store';
 
+// Formats price values for display.
 function formatPrice(value: number) {
 	if (!Number.isFinite(value)) return '$0.00';
 	return `$${value.toFixed(2)}`;
 }
 
+// Formats card number into groups of four digits.
 function formatCard(value: string) {
 	return value.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim().slice(0, 19);
 }
 
+// Formats expiry input into MM/YY.
 function formatExpiry(value: string) {
 	const digits = value.replace(/\D/g, '').slice(0, 4);
 	return digits.length >= 3 ? `${digits.slice(0, 2)}/${digits.slice(2, 4)}` : digits;
 }
 
+// Collects payment details and submits the order.
 export default function CheckoutPaymentScreen() {
 	const navigation = useNavigation();
 	const route = useRoute();
@@ -52,6 +57,7 @@ export default function CheckoutPaymentScreen() {
 
 	const total = promoResult?.discountedPrice ?? subtotal;
 
+	// Validates payment info and places the order.
 	const handlePay = async () => {
 		if (!customer?.name || !customer?.email || !customer?.address) {
 			setLocalError('Missing customer details.');
@@ -299,4 +305,3 @@ const styles = StyleSheet.create({
 		fontSize: 15,
 	},
 });
-

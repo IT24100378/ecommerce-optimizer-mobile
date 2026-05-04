@@ -1,3 +1,4 @@
+// Storefront product feed with merchandising rails and filters.
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
 	ActivityIndicator,
@@ -59,15 +60,18 @@ const FEATURED_CATEGORY_RAILS = [
 	{ title: 'TV', aliases: ['tv', 'tvs'] },
 ];
 
+// Formats price values for display.
 function formatPrice(value: number) {
 	if (!Number.isFinite(value)) return '$0.00';
 	return `$${value.toFixed(2)}`;
 }
 
+// Normalizes category names for matching.
 function normalizeCategory(value?: string) {
 	return String(value || '').toLowerCase().trim();
 }
 
+// Builds hero slides from active promotions.
 function buildSlides(promotions: Promotion[]) {
 	if (!promotions.length) return DEFAULT_SLIDES;
 	const promoSlides = promotions.map((promo) => ({
@@ -81,6 +85,7 @@ function buildSlides(promotions: Promotion[]) {
 	return [...promoSlides, ...DEFAULT_SLIDES.slice(0, 2)];
 }
 
+// Hero carousel for storefront promotions.
 function HeroSlider({ slides, scrollX }: { slides: typeof DEFAULT_SLIDES; scrollX: Animated.Value }) {
 	return (
 		<View>
@@ -139,6 +144,7 @@ function HeroSlider({ slides, scrollX }: { slides: typeof DEFAULT_SLIDES; scroll
 	);
 }
 
+// Horizontal category filter chips.
 function CategoryChips({
 						   categories,
 						   activeCategory,
@@ -171,6 +177,7 @@ function CategoryChips({
 	);
 }
 
+// Sort selector chips for product ordering.
 function SortOptions({ value, onChange }: { value: string; onChange: (value: string) => void }) {
 	return (
 		<FlatList
@@ -195,6 +202,7 @@ function SortOptions({ value, onChange }: { value: string; onChange: (value: str
 	);
 }
 
+// Product card used in the main grid.
 function ProductCard({
 						 product,
 						 onAdd,
@@ -252,6 +260,7 @@ function ProductCard({
 	);
 }
 
+// Product card used in merchandising rails.
 function ProductRailCard({
 							 product,
 							 onAdd,
@@ -290,6 +299,7 @@ function ProductRailCard({
 	);
 }
 
+// Main storefront screen with search, filters, and product list.
 export default function ProductFeedScreen() {
 	const navigation = useNavigation();
 	const {
@@ -385,6 +395,7 @@ export default function ProductFeedScreen() {
 
 	const totalItems = useMemo(() => cartItems.reduce((sum, item) => sum + item.qty, 0), [cartItems]);
 
+	// Handles add-to-cart with stock guardrails.
 	const handleAddToCart = useCallback((product: Product) => {
 		const availableStock = Number(product.availableStock ?? product.stockQuantity ?? 0);
 		if (availableStock <= 0) return;
@@ -397,6 +408,7 @@ export default function ProductFeedScreen() {
 		addToCart(product);
 	}, [addToCart, cartItems]);
 
+	// Opens the product detail screen.
 	const handleOpenDetail = useCallback((product: Product) => {
 		navigation.navigate('ProductDetail' as never, {
 			product,
@@ -404,10 +416,12 @@ export default function ProductFeedScreen() {
 		} as never);
 	}, [navigation]);
 
+	// Renders the main grid product cards.
 	const renderProduct = useCallback(({ item }: { item: Product }) => (
 		<ProductCard product={item} onAdd={handleAddToCart} onOpen={handleOpenDetail} />
 	), [handleAddToCart, handleOpenDetail]);
 
+	// Renders product cards for horizontal rails.
 	const renderRail = useCallback(({ item }: { item: Product }) => (
 		<ProductRailCard product={item} onAdd={handleAddToCart} onOpen={handleOpenDetail} />
 	), [handleAddToCart, handleOpenDetail]);
