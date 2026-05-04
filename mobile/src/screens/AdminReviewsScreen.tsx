@@ -1,5 +1,5 @@
 // Admin reviews moderation screen.
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
 	ActivityIndicator,
 	Alert,
@@ -11,6 +11,7 @@ import {
 	View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import { API_BASE_URL, useStorefrontStore } from '../storefront/store';
 
@@ -42,9 +43,12 @@ export default function AdminReviewsScreen() {
 		}
 	}, [headers, productId]);
 
-	useEffect(() => {
-		fetchRows();
-	}, [fetchRows]);
+	useFocusEffect(
+		useCallback(() => {
+			fetchRows();
+			return undefined;
+		}, [fetchRows])
+	);
 
 	// Toggles the hidden status of a review.
 	const toggleHidden = async (review: any) => {

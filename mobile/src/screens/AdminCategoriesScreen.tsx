@@ -1,5 +1,5 @@
 // Admin category management screen.
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
 	ActivityIndicator,
 	Alert,
@@ -11,6 +11,7 @@ import {
 	View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import { API_BASE_URL, useStorefrontStore } from '../storefront/store';
 
@@ -60,9 +61,13 @@ export default function AdminCategoriesScreen() {
 		}
 	}, [fetchCatalog, headers, token]);
 
-	useEffect(() => {
-		loadData();
-	}, [loadData]);
+	useFocusEffect(
+		useCallback(() => {
+			if (saving) return undefined;
+			loadData();
+			return undefined;
+		}, [loadData, saving])
+	);
 
 	// Creates a new category.
 	const handleCreate = async () => {

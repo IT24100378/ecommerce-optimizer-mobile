@@ -1,5 +1,5 @@
 // Admin order management screen for status updates and creation.
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
 	ActivityIndicator,
 	Alert,
@@ -12,6 +12,7 @@ import {
 	View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import { API_BASE_URL, useStorefrontStore } from '../storefront/store';
 
@@ -49,9 +50,12 @@ export default function AdminOrdersScreen() {
 		}
 	}, [headers]);
 
-	useEffect(() => {
-		fetchOrders();
-	}, [fetchOrders]);
+	useFocusEffect(
+		useCallback(() => {
+			fetchOrders();
+			return undefined;
+		}, [fetchOrders])
+	);
 
 	// Updates the status of an order.
 	const updateStatus = async (orderId: string, nextStatus: string) => {

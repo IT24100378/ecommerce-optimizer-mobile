@@ -1,5 +1,5 @@
 // Admin promotions management screen with preview and testing tools.
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
 	ActivityIndicator,
 	Alert,
@@ -11,6 +11,7 @@ import {
 	View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import { API_BASE_URL, useStorefrontStore } from '../storefront/store';
 
@@ -94,9 +95,13 @@ export default function AdminPromotionsScreen() {
 		}
 	}, [headers]);
 
-	useEffect(() => {
-		fetchRows();
-	}, [fetchRows]);
+	useFocusEffect(
+		useCallback(() => {
+			if (formOpen) return undefined;
+			fetchRows();
+			return undefined;
+		}, [fetchRows, formOpen])
+	);
 
 	// Opens the create promotion form.
 	const openCreate = () => {

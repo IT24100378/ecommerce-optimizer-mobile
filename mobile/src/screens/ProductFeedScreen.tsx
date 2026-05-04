@@ -15,7 +15,7 @@ import {
 	View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import {
 	getProductId,
 	Promotion,
@@ -324,9 +324,13 @@ export default function ProductFeedScreen() {
 	const scrollX = useRef(new Animated.Value(0)).current;
 	const cartBadgeScale = useRef(new Animated.Value(1)).current;
 
-	useEffect(() => {
-		fetchCatalog();
-	}, [fetchCatalog]);
+
+	useFocusEffect(
+		useCallback(() => {
+			fetchCatalog();
+			return undefined;
+		}, [fetchCatalog])
+	);
 
 	useEffect(() => {
 		Animated.sequence([

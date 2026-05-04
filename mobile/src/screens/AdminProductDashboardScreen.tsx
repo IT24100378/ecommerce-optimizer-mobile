@@ -1,5 +1,5 @@
 // Admin product management screen for CRUD operations.
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
 	ActivityIndicator,
 	Alert,
@@ -14,6 +14,7 @@ import {
 	View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import { API_BASE_URL, getProductId, Product, useStorefrontStore } from '../storefront/store';
 
@@ -55,10 +56,14 @@ export default function AdminProductDashboardScreen() {
 		}
 	}, []);
 
-	useEffect(() => {
-		fetchCatalog();
-		fetchCategories();
-	}, [fetchCatalog, fetchCategories]);
+	useFocusEffect(
+		useCallback(() => {
+			if (formModal) return undefined;
+			fetchCatalog();
+			fetchCategories();
+			return undefined;
+		}, [fetchCatalog, fetchCategories, formModal])
+	);
 
 	// Opens the create product modal.
 	const openCreate = () => {

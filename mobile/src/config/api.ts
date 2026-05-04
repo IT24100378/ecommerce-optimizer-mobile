@@ -4,7 +4,7 @@ const CLOUD_API_BASE_URL = 'https://ecommerce-optimizer-backend-production.up.ra
 const LOCAL_ANDROID_EMULATOR_API_BASE_URL = 'http://10.0.2.2:5000';
 
 // Set true only when you intentionally want to test against a local backend.
-const USE_LOCAL_API = false;
+const USE_LOCAL_API = true;
 
 export const API_BASE_URL = USE_LOCAL_API
     ? LOCAL_ANDROID_EMULATOR_API_BASE_URL

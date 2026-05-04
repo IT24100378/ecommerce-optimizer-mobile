@@ -1,5 +1,5 @@
 // Admin inventory management screen.
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
 	ActivityIndicator,
 	Alert,
@@ -11,6 +11,7 @@ import {
 	View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import { API_BASE_URL, useStorefrontStore } from '../storefront/store';
 
@@ -49,9 +50,13 @@ export default function AdminInventoryScreen() {
 		}
 	}, [headers]);
 
-	useEffect(() => {
-		fetchRows();
-	}, [fetchRows]);
+	useFocusEffect(
+		useCallback(() => {
+			if (showCreate || editingId) return undefined;
+			fetchRows();
+			return undefined;
+		}, [editingId, fetchRows, showCreate])
+	);
 
 	// Creates a new inventory record.
 	const createRecord = async () => {

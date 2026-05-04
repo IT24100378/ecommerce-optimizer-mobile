@@ -1,5 +1,5 @@
 // Orders screen showing recent purchase history.
-import React, { useEffect } from 'react';
+import React, { useCallback } from 'react';
 import {
 	ActivityIndicator,
 	FlatList,
@@ -8,6 +8,7 @@ import {
 	View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Order, useStorefrontStore } from '../storefront/store';
 
 // Formats price values for display.
@@ -20,9 +21,12 @@ function formatPrice(value: number) {
 export default function OrdersScreen() {
 	const { orders, ordersLoading, ordersError, fetchOrders } = useStorefrontStore();
 
-	useEffect(() => {
-		fetchOrders();
-	}, [fetchOrders]);
+	useFocusEffect(
+		useCallback(() => {
+			fetchOrders();
+			return undefined;
+		}, [fetchOrders])
+	);
 
 	// Renders each order summary card.
 	const renderItem = ({ item }: { item: Order }) => (

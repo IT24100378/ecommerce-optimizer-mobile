@@ -346,12 +346,27 @@ router.delete('/:id', authenticateJwt, requireRole('ADMIN'), async (req, res) =>
                 throw err;
             }
 
+            const adjustedProductIds = new Set();
             if (!RESTOCK_STATUSES.has((order.status || '').toUpperCase())) {
+                const existingAdjustments = await tx.inventoryAdjustment.findMany({
+                    where: {
+                        orderId,
+                        reason: 'ORDER_DELETED',
+                    },
+                    select: { productId: true },
+                });
+                for (const adjustment of existingAdjustments) {
+                    adjustedProductIds.add(adjustment.productId);
+                }
+
                 const productQuantityMap = order.items.reduce((productQuantities, item) => {
                     productQuantities.set(item.productId, (productQuantities.get(item.productId) || 0) + item.quantity);
                     return productQuantities;
                 }, new Map());
                 for (const [productId, quantity] of productQuantityMap.entries()) {
+                    if (adjustedProductIds.has(productId)) {
+                        continue;
+                    }
                     await adjustStock(tx, {
                         productId,
                         delta: quantity,
@@ -360,6 +375,9 @@ router.delete('/:id', authenticateJwt, requireRole('ADMIN'), async (req, res) =>
                     });
                 }
             }
+
+            // Prevent unique conflicts when referential action sets orderId to null.
+            await tx.inventoryAdjustment.deleteMany({ where: { orderId } });
 
             await tx.orderItem.deleteMany({ where: { orderId } });
             await tx.order.delete({ where: { id: orderId } });
