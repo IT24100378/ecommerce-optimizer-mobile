@@ -144,13 +144,19 @@ function Navbar({ cartCount, onCartOpen, searchTerm, onSearchChange, user, onAut
 }
 
 function AuthModal({ open, mode, onClose, onAuthSuccess }) {
-  const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', address: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', phone: '', address: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phoneRegex = /^\+?[1-9]\d{7,14}$/;
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,64}$/;
+
+  const normalizePhone = (value) => value.replace(/[^\d+]/g, '');
+
   useEffect(() => {
     if (!open) {
-      setForm({ name: '', email: '', password: '', phone: '', address: '' });
+      setForm({ name: '', email: '', password: '', confirmPassword: '', phone: '', address: '' });
       setSaving(false);
       setError('');
     }
@@ -164,11 +170,33 @@ function AuthModal({ open, mode, onClose, onAuthSuccess }) {
     setError('');
     try {
       if (mode === 'signup') {
+        const trimmedEmail = form.email.trim().toLowerCase();
+        const normalizedPhone = form.phone ? normalizePhone(form.phone) : '';
+        if (!emailRegex.test(trimmedEmail)) {
+          setError('Please enter a valid email address.');
+          setSaving(false);
+          return;
+        }
+        if (!passwordRegex.test(form.password)) {
+          setError('Password must be 8-64 characters and include upper, lower, and number characters.');
+          setSaving(false);
+          return;
+        }
+        if (form.password !== form.confirmPassword) {
+          setError('Passwords do not match.');
+          setSaving(false);
+          return;
+        }
+        if (form.phone && !phoneRegex.test(normalizedPhone)) {
+          setError('Please enter a valid phone number.');
+          setSaving(false);
+          return;
+        }
         const { data } = await axios.post(`${API}/api/users`, {
           name: form.name,
-          email: form.email,
+          email: trimmedEmail,
           password: form.password,
-          phone: form.phone,
+          phone: normalizedPhone || '',
           address: form.address,
         });
         onAuthSuccess(data);
@@ -213,6 +241,11 @@ function AuthModal({ open, mode, onClose, onAuthSuccess }) {
         <input type="password" value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
           required placeholder="Password"
           className="w-full bg-gray-800 text-white border border-gray-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+        {mode === 'signup' && (
+          <input type="password" value={form.confirmPassword} onChange={e => setForm(p => ({ ...p, confirmPassword: e.target.value }))}
+            required placeholder="Re Enter Password"
+            className="w-full bg-gray-800 text-white border border-gray-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+        )}
         {error && <p className="text-red-400 text-xs">{error}</p>}
         <button disabled={saving} className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:opacity-60 text-white font-semibold py-2.5 rounded-xl transition-colors">
           {saving ? 'Please wait…' : mode === 'signup' ? 'Sign Up' : 'Sign In'}
@@ -1202,7 +1235,7 @@ function UserProfileModal({ open, onClose, currentUser, onUserUpdate }) {
                 <input
                   type="password"
                   required
-                  minLength={6}
+                  minLength={8}
                   value={passwordForm.newPassword}
                   onChange={e => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
                   className="w-full bg-gray-800 text-white border border-gray-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
